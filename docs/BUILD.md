@@ -1,6 +1,6 @@
 # Run and build from source
 
-Use Python 3.12 with Tkinter. Clone this repository or extract its source ZIP.
+Use Python 3.12; the requirements install PySide6/Qt. Clone this repository or extract its source ZIP.
 Build on the operating system and CPU you intend to support.
 
 ## Windows PowerShell
@@ -35,9 +35,9 @@ python source/build.py
 python source/package_native.py
 ```
 
-Output: Windows `dist/SSYTDLP.exe`, macOS `dist/SSYTDLP.app`, or Linux
-`dist/SSYTDLP`. Archives and SHA256 files go into `native-artifacts/`.
-Keep packaged `tools` with the program. macOS/Linux use externally installed FFmpeg.
+Output: Windows `dist/SSYTDLP/SSYTDLP.exe`, macOS `dist/SSYTDLP.app`, or Linux
+`dist/SSYTDLP/SSYTDLP`. Archives and SHA256 files go into `native-artifacts/`.
+Keep packaged `_internal` and `tools` with the program. macOS/Linux use externally installed FFmpeg.
 Windows provisioning downloads and checksum-verifies the Gyan essentials FFmpeg build.
 
 `prepare_tools.py` provisions official nightly and Deno; `prepare_release.py`
@@ -60,7 +60,7 @@ and attaches native archives and checksums. Release uploads require the workflow
 
 | File | Purpose |
 | --- | --- |
-| `source/ui.py`, `dialogs.py`, `appearance.py` | GUI, previews, settings and themes |
+| `source/desktop.py`, `qt_dialogs.py`, `ui_widgets.py`, `themes.py` | Qt GUI, previews, settings and themes |
 | `source/engine.py` | yt-dlp arguments, download processes and nightly updater |
 | `source/queue_model.py` | Persistent selections and sequential batch runner |
 | `source/lyrics.py` | LRCLIB matching, sidecars and Mutagen tags |
@@ -69,3 +69,5 @@ and attaches native archives and checksums. Release uploads require the workflow
 | `source/i18n.py` | English, German, Spanish and French strings |
 
 Native archives are unsigned. Signing/notarization is not configured.
+
+Tests use `QT_QPA_PLATFORM=offscreen` in CI. macOS requires macOS 14+ for the pinned Qt wheel. Linux needs the system Qt/XCB/EGL dependencies listed in the workflow.

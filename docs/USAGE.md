@@ -65,6 +65,22 @@ combinations have separate archive profiles. To retry an optional provider
 failure, edit the completed source and temporarily disable **Skip previously
 downloaded items**. Existing media files are preserved.
 
-Settings → **Appearance** offers light/dark mode, four interface languages and
+Settings → **Appearance** offers sixteen visual themes, custom colors, four interface languages and
 wallpaper. The app copies the wallpaper into its settings folder. Remove it
 independently of the theme. Queue, appearance and destination preferences survive restarts.
+
+## Browse a large playlist
+
+Open **Queue** in the sidebar. Every staged playlist/video is expanded into its
+entries, including unselected and unavailable items. Choose a source in the
+dropdown or search by title, artist or playlist. Select a row and click
+**Edit selection**, or double-click it, to reopen that source's selection editor.
+The selection marks are indicators; use the editor to change the selected videos.
+The source status column reports the playlist's download state. Progress and
+cancellation remain available during downloads; selection editing resumes when idle.
+
+![Detailed queue](screenshots/queue-details.png)
+
+Metadata thumbnails load only as needed and share a bounded cache. Missing or
+failed artwork uses a fallback icon. The compact downloader row uses artwork from
+the first selected entry with a thumbnail, or another entry when necessary.

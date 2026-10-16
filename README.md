@@ -7,9 +7,9 @@ what you want, queue several links, and download when you're ready.
 
 [Download](https://github.com/Slulisee/SSYTDLP/releases/latest) ·
 [Install](docs/INSTALL.md) · [How to use](docs/USAGE.md) ·
-[Changelog](CHANGELOG.md) · [Contribute](CONTRIBUTING.md)
+[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.1.0.md) · [Contribute](CONTRIBUTING.md)
 
-![SSYTDLP in dark mode](docs/screenshots/dark.png)
+![SSYTDLP Ocean theme](docs/screenshots/thumbnails.png)
 
 ## What it does
 
@@ -19,14 +19,16 @@ what you want, queue several links, and download when you're ready.
 - Choose your download folder, embed metadata and covers, and sort Artist / Album folders.
 - Optional lyrics: timed LRC, plain text and supported embedded lyric tags.
 - Optional subtitles: language selection, automatic captions and video embedding.
-- Light and dark themes, custom wallpaper, and English / German / Spanish / French UI.
+- Sixteen visual themes, custom colors and wallpaper; English / German / Spanish / French UI.
+- Full-height playlist queue with search, source filters and real metadata thumbnails.
+- Optional completed-download handoff to SSMP.
 - Saved queues, cancellation, resume and duplicate skipping.
 - Official nightly engine updates with SHA256 verification.
 
 ## Install
 
 **Windows x64:** download the Windows ZIP from [Releases](https://github.com/Slulisee/SSYTDLP/releases/latest),
-extract the **whole archive**, and run `SSYTDLP.exe`. Keep `tools` beside it.
+extract the **whole archive**, and run `SSYTDLP.exe`. Keep `_internal` and `tools` beside it.
 Windows release builds include FFmpeg, ffprobe, Deno and yt-dlp nightly.
 
 **macOS / Linux:** see the [platform installation guide](docs/INSTALL.md).
@@ -42,7 +44,9 @@ still needs community testing even when the native build passes CI.
 3. Choose a preset, destination and optional metadata, lyrics or subtitles.
 4. Press **Download queue**.
 
-Open **Settings** for language, appearance, wallpaper and subtitle languages.
+Open **Queue** to browse every video inside your playlists, search, and edit selections.
+Open **Settings → Appearance** for sixteen visual themes and your own colors.
+See the [appearance guide](APPEARANCE.md) and optional [SSMP handoff](SSMP-INTEGRATION.md).
 The [usage guide](docs/USAGE.md) explains selections, service imports and retries.
 
 ## Music services
@@ -60,19 +64,21 @@ to save. Personal use does not itself grant copying rights.
 
 ## More previews
 
-| Light theme | Playlist selection |
+| Carbon monochrome | Visual theme selection |
 | --- | --- |
-| ![Light theme](docs/screenshots/light.png) | ![Playlist selection](docs/screenshots/playlist.png) |
+| ![Carbon](docs/screenshots/carbon.png) | ![Themes](docs/screenshots/themes.png) |
 
-![Lyrics and subtitle settings](docs/screenshots/media-settings.png)
+![Detailed playlist queue](docs/screenshots/queue-details.png)
 
-Screenshots show the real Windows UI with example queue entries; no media is
-downloaded to create them. Layout and window decoration vary by platform.
+Screenshots capture the real Windows UI. The queue preview combines a public
+YouTube metadata example with an explicitly labeled generated layout playlist.
+No media downloads or personal settings are included in this repository.
+Layout and window decoration vary by platform.
 
 ## Source and development
 
 The complete application source, tests and build scripts are public in `source/`.
-Python 3.12 and Tkinter are required. See [BUILD.md](docs/BUILD.md) for the commands.
+Python 3.12 is required; the pinned requirements install PySide6/Qt. See [BUILD.md](docs/BUILD.md) for the commands.
 No API key or account login is required for the implemented public-source routes.
 
 SSYTDLP's own source is [MIT licensed](LICENSE). Dependencies retain their own

@@ -27,3 +27,7 @@ URLs and hashes. The FFmpeg notice includes its configuration and source revisio
 [spotDL](https://github.com/spotDL/spotify-downloader) informed the approach;
 their source code is not copied into this project. See [RESEARCH.md](RESEARCH.md).
 Lyrics and downloaded media have their own rights, separate from the app license.
+
+## Qt desktop view
+
+PySide6-Essentials and Shiboken6 use their upstream LGPL/GPL/commercial terms; Qt module terms also apply. The application code remains MIT. Official license texts, installed package notices and corresponding upstream source links are in `licenses/qt/`. Qt libraries are dynamically bundled in `_internal` and can be replaced.

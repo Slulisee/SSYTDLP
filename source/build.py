@@ -10,21 +10,28 @@ import sys
 def main():
     root = Path(__file__).resolve().parent.parent
     destination = root / 'dist'
-    args = [sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--windowed', '--onedir' if sys.platform == 'darwin' else '--onefile', '--name', 'SSYTDLP', '--distpath', str(destination), '--workpath', str(root / 'build'), '--specpath', str(root / 'build')]
+    args = [sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--windowed', '--onedir', '--name', 'SSYTDLP', '--distpath', str(destination), '--workpath', str(root / 'build'), '--specpath', str(root / 'build')]
     if sys.platform == 'win32':
         args += ['--icon', str(root / 'source/app.ico')]
     if sys.platform == 'darwin':
         args += ['--osx-bundle-identifier', 'app.slulisee.ssytdlp']
     args += [str(root / 'source/app.py')]
-    subprocess.run(args, check=True)
-    target = destination / 'SSYTDLP.app/Contents/MacOS' if sys.platform == 'darwin' else destination
+    env = os.environ.copy()
+    if sys.platform == 'win32':
+        # Dependency scanning must resolve Windows' own ICU runtime, rather
+        # than an incompatible DLL from an unrelated PDF/media tool on PATH.
+        windows = Path(env.get('SystemRoot', 'C:/Windows'))
+        paths = [Path(sys.executable).parent, Path(sys.base_prefix), windows / 'System32', windows]
+        env['PATH'] = os.pathsep.join(str(path) for path in paths if path.is_dir())
+    subprocess.run(args, check=True, env=env)
+    target = destination / 'SSYTDLP.app/Contents/MacOS' if sys.platform == 'darwin' else destination / 'SSYTDLP'
     shutil.copytree(root / 'tools', target / 'tools', dirs_exist_ok=True)
-    for name in ('README.md', 'CROSS-PLATFORM.md', 'DISCLAIMER.md', 'LICENSE', 'THIRD_PARTY.md', 'CHANGELOG.md'):
+    shutil.copytree(root / 'licenses', target / 'licenses', dirs_exist_ok=True)
+    for name in ('README.md', 'CROSS-PLATFORM.md', 'DISCLAIMER.md', 'LICENSE', 'LICENSE.txt', 'THIRD_PARTY.md', 'APPEARANCE.md', 'CHANGELOG.md', 'SSMP-INTEGRATION.md'):
         if (root / name).exists():
-            shutil.copy2(root / name, destination / name)
-    for name in ('licenses', 'docs'):
-        if (root / name).is_dir():
-            shutil.copytree(root / name, destination / name, dirs_exist_ok=True)
+            shutil.copy2(root / name, target / name)
+    if (root / 'docs').is_dir():
+        shutil.copytree(root / 'docs', target / 'docs', dirs_exist_ok=True)
     print('Built for ' + platform.system() + ' ' + platform.machine() + ': ' + str(destination))
 
 

@@ -51,6 +51,8 @@ class Options:
     catalog_artist: str = ''
     catalog_album: str = ''
     catalog_number: int = 0
+    ssmp_enabled: bool = False
+    ssmp_inbox: str = ''
 
 
 def validate_url(value: str) -> str:
@@ -138,7 +140,7 @@ def build_args(options: Options, tools: Path) -> list[str]:
         args += ['--embed-metadata', '--no-embed-info-json']
     if options.cover:
         args += ['--embed-thumbnail', '--convert-thumbnails', 'jpg']
-    if options.lyrics:
+    if options.lyrics or options.ssmp_enabled:
         fields = ('filepath', 'title', 'track', 'artist', 'album', 'duration', 'uploader')
         args += ['--print', 'after_move:MEDIA:{' + ','.join('"' + field + '":%(' + field + '|null)j' for field in fields) + '}']
     if options.subtitles:
@@ -184,6 +186,8 @@ class Download:
 
     def run(self, options: Options) -> None:
         completed = 0
+        ssmp_paths = []
+        ssmp_metadata = {}
         try:
             args = build_args(options, self.tools)
             for name in ('yt-dlp', 'ffmpeg', 'ffprobe'):
@@ -216,12 +220,15 @@ class Download:
                         continue
                     if line.startswith('FILE:'):
                         completed += 1
-                        self.emit('file', json.loads(line[5:]))
+                        path = json.loads(line[5:])
+                        ssmp_paths.append(path)
+                        self.emit('file', path)
                         continue
-                    if line.startswith('MEDIA:') and options.lyrics:
-                        from lyrics import add_lyrics
+                    if line.startswith('MEDIA:') and (options.lyrics or options.ssmp_enabled):
                         info = json.loads(line[6:])
-                        if not self.cancelled.is_set():
+                        ssmp_metadata[info['filepath']] = info
+                        if options.lyrics and not self.cancelled.is_set():
+                            from lyrics import add_lyrics
                             add_lyrics(info['filepath'], info, options.embed_lyrics, self.emit, self.cancelled)
                         continue
                 except (ValueError, TypeError):
@@ -230,6 +237,14 @@ class Download:
             process.stdout.close()
             code = process.wait()
             status = 'cancelled' if self.cancelled.is_set() else 'success' if code == 0 else 'error'
+            if options.ssmp_enabled and ssmp_paths:
+                try:
+                    from ssmp_bridge import publish
+                    manifest = publish(ssmp_paths, options.ssmp_inbox, ssmp_metadata, options.url)
+                    if manifest:
+                        self.emit('log', '[SSMP] Completed files added to inbox: ' + str(manifest))
+                except Exception as exc:
+                    self.emit('log', '[SSMP] Download completed, but library handoff failed: ' + str(exc))
             self.emit('done', {'status': status, 'files': completed, 'exit_code': code})
         except Exception as exc:
             self.emit('log', str(exc))
@@ -248,7 +263,7 @@ def github_headers(url: str, user_agent='SSYTDLP/1.0') -> dict:
 
 
 def _get(url: str) -> bytes:
-    with urlopen(Request(url, headers=github_headers(url)), timeout=45) as response:
+    with urlopen(Request(url, headers=github_headers(url, 'SSYTDLP/2.0')), timeout=45) as response:
         return response.read()
 
 
