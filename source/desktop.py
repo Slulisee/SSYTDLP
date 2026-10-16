@@ -168,8 +168,8 @@ class App(QMainWindow):
         self.edit_button=self.make_button('edit','edit',self.edit_selection)
         self.remove_button=self.make_button('remove','trash',self.remove_selected)
         self.clear_button=self.make_button('clear_done','check',self.clear_completed)
-        self.queue_actions=QWidget();actions=QHBoxLayout(self.queue_actions);actions.setContentsMargins(0,0,0,0);actions.setSpacing(9)
-        for button in (self.edit_button,self.remove_button,self.clear_button):actions.addWidget(button)
+        self.queue_actions=QWidget();actions=self.queue_action_layout=QGridLayout(self.queue_actions);actions.setContentsMargins(0,0,0,0);actions.setSpacing(9)
+        for column,button in enumerate((self.edit_button,self.remove_button,self.clear_button)):actions.addWidget(button,0,column)
         header.addWidget(self.queue_actions)
         self.queue_card.body.addLayout(header)
         self.tree=QTableWidget(0,6);self.tree.setFixedHeight(226)
@@ -545,6 +545,9 @@ class App(QMainWindow):
                 self.queue_card.body.removeWidget(self.queue_actions);self.queue_header.addWidget(self.queue_actions)
                 self.update_footer.layout().removeWidget(self.update_button)
                 self.destination_actions.addWidget(self.update_button);self.update_footer.hide()
+            for index,button in enumerate((self.edit_button,self.remove_button,self.clear_button)):
+                self.queue_action_layout.removeWidget(button)
+                self.queue_action_layout.addWidget(button,index//2 if compact else 0,index%2 if compact else index)
             for index,line in enumerate(self.check_rows):
                 self.checks_grid.removeWidget(line);self.checks_grid.addWidget(line,index if compact else index//2,0 if compact else index%2)
             self.checks_grid.setColumnStretch(1,0 if compact else 1);self.checks_grid.setColumnStretch(0,1)

@@ -31,3 +31,5 @@ nightly preview, staged queue, MP3/FFmpeg download and SSMP inbox handoff.
 GitHub Actions builds the release source independently for each OS. Consult its
 run for native packaging/startup results; these are separate from the local
 interactive verification above. Interactive macOS/Linux downloads remain untested.
+
+Final layout follow-up: the Linux DejaVu Sans reproduction initially exposed 14 pixels of French queue-toolbar overflow at 900 x 680. The compact toolbar now uses two rows; overflow is zero. The complete 55-test suite passed again on Windows and on a Linux Python 3.13 reproduction (27.824 seconds). GitHub CI uses Python 3.12 and reports its own final native results separately.
