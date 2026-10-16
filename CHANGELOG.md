@@ -30,8 +30,9 @@ First public open-source release. Earlier development builds were distributed lo
 - Native CI provisioning uses scoped GitHub API authentication to avoid shared-runner rate limits.
 
 ### Validation and limits
-- Windows unit, GUI and real download checks are documented in `docs/VERIFICATION.md`.
-- Native macOS/Linux build results appear in Actions; interactive use needs testing.
+- 26 tests and native packaging passed on Windows, macOS and Linux in GitHub Actions.
+- Frozen Windows/Linux GUI startup passed; macOS/Linux interactive downloads still need testing.
+- Windows GUI and real download checks are documented in `docs/VERIFICATION.md`.
 - Catalog imports are metadata-to-YouTube matches, not protected service audio.
 
 [Unreleased]: https://github.com/Slulisee/SSYTDLP/compare/v1.0.0...HEAD
