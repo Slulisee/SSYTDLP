@@ -230,12 +230,15 @@ class App(QMainWindow):
         self.browse_button=self.make_button('browse','folder',self.browse)
         self.open_button=self.make_button('open_folder','folder',self.open_folder,primary=True)
         self.destination_card.body.addLayout(row(self.folder_entry,self.browse_button,self.open_button))
-        actions=QHBoxLayout()
+        actions=self.destination_actions=QHBoxLayout()
         self.download_button=self.make_button('download','download',self.start,primary=True);self.download_button.setMinimumWidth(208)
         self.cancel_button=self.make_button('cancel','close',self.cancel)
         actions.addWidget(self.download_button);actions.addWidget(self.cancel_button);actions.addStretch()
         self.update_button=self.make_button('update','refresh',self.update_engine);actions.addWidget(self.update_button)
         self.destination_card.body.addLayout(actions)
+        self.update_footer=QWidget();footer=QHBoxLayout(self.update_footer)
+        footer.setContentsMargins(0,0,0,0);footer.addStretch();self.update_footer.hide()
+        self.destination_card.body.addWidget(self.update_footer)
         self.progress=QProgressBar();self.progress.setTextVisible(False);self.progress.setRange(0,100);self.progress.hide()
         self.current=text_label('','muted');self.current.hide()
         self.status=text_label('','muted',True)
@@ -536,8 +539,12 @@ class App(QMainWindow):
             self.compact_checks=compact
             if compact:
                 self.queue_header.removeWidget(self.queue_actions);self.queue_card.body.insertWidget(1,self.queue_actions)
+                self.destination_actions.removeWidget(self.update_button)
+                self.update_footer.layout().addWidget(self.update_button);self.update_footer.show()
             else:
                 self.queue_card.body.removeWidget(self.queue_actions);self.queue_header.addWidget(self.queue_actions)
+                self.update_footer.layout().removeWidget(self.update_button)
+                self.destination_actions.addWidget(self.update_button);self.update_footer.hide()
             for index,line in enumerate(self.check_rows):
                 self.checks_grid.removeWidget(line);self.checks_grid.addWidget(line,index if compact else index//2,0 if compact else index%2)
             self.checks_grid.setColumnStretch(1,0 if compact else 1);self.checks_grid.setColumnStretch(0,1)
