@@ -8,14 +8,13 @@ import platform
 import re
 import zipfile
 
-from engine import update_nightly
+from engine import github_headers, update_nightly
 from platform_support import executable_name
-from services import get_data
 from urllib.request import Request, urlopen
 
 
 def fetch(url):
-    with urlopen(Request(url, headers={'User-Agent': 'SSYTDLP/3.0 setup'}), timeout=90) as response:
+    with urlopen(Request(url, headers=github_headers(url, 'SSYTDLP/1.0 setup')), timeout=90) as response:
         return response.read()
 
 
@@ -30,7 +29,7 @@ def prepare(root=None):
     if not (tools / executable_name('deno')).exists():
         arch = 'aarch64' if platform.machine().lower() in ('arm64', 'aarch64') else 'x86_64'
         target = 'pc-windows-msvc' if os.name == 'nt' else 'apple-darwin' if platform.system() == 'Darwin' else 'unknown-linux-gnu'
-        release = get_data('https://api.github.com/repos/denoland/deno/releases/latest')
+        release = json.loads(fetch('https://api.github.com/repos/denoland/deno/releases/latest'))
         tag = release['tag_name']
         if not re.fullmatch(r'v\d+\.\d+\.\d+', tag):
             raise ValueError('Unexpected Deno release tag.')

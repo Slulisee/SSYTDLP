@@ -1,6 +1,7 @@
 from pathlib import Path
 import hashlib
 import json
+import os
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -11,6 +12,14 @@ from platform_support import executable_name, nightly_asset
 
 
 class EngineTests(unittest.TestCase):
+    def test_ci_authorization_is_only_sent_to_https_github_api(self):
+        with patch.dict(os.environ, {'SSYTDLP_GITHUB_TOKEN': 'synthetic-ci-fixture'}):
+            self.assertIn('Authorization', engine.github_headers(engine.NIGHTLY_REPO))
+            for url in ('https://github.com/file', 'https://api.github.com.example.org/a',
+                        'http://api.github.com/a', 'https://www.gyan.dev/ffmpeg',
+                        'https://api.github.com@other.example/a'):
+                self.assertNotIn('Authorization', engine.github_headers(url))
+
     def test_urls_are_single_http_arguments(self):
         for value in ('file:///C:/secret', 'javascript:test()', '--exec=whoami', 'https://name:pass@example.com/a', 'https://example.com/a\n--exec=x', 'https://example.com:bad/a', ''):
             with self.subTest(value=value), self.assertRaises(ValueError):

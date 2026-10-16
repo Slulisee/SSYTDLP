@@ -236,8 +236,19 @@ class Download:
             self.emit('done', {'status': 'cancelled' if self.cancelled.is_set() else 'error', 'files': completed})
 
 
+def github_headers(url: str, user_agent='SSYTDLP/1.0') -> dict:
+    headers = {'User-Agent': user_agent}
+    # CI's short-lived token avoids shared-runner API rate limits. It is never
+    # sent to download mirrors, catalog services or non-HTTPS endpoints.
+    token = os.environ.get('SSYTDLP_GITHUB_TOKEN')
+    parsed = urlsplit(url)
+    if token and parsed.scheme == 'https' and parsed.netloc == 'api.github.com':
+        headers['Authorization'] = 'Bearer ' + token
+    return headers
+
+
 def _get(url: str) -> bytes:
-    with urlopen(Request(url, headers={'User-Agent': 'SSYTDLP/2.0'}), timeout=45) as response:
+    with urlopen(Request(url, headers=github_headers(url)), timeout=45) as response:
         return response.read()
 
 

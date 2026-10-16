@@ -26,6 +26,8 @@ jobs:
       - name: Unit tests
         run: python -m unittest discover -s source -p 'test_*.py' -v
       - name: Provision nightly, Deno and release dependencies
+        env:
+          SSYTDLP_GITHUB_TOKEN: ${{ github.token }}
         run: python source/prepare_release.py
       - name: Build native GUI
         run: python source/build.py

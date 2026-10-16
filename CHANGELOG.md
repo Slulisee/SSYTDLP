@@ -27,6 +27,7 @@ First public open-source release. Earlier development builds were distributed lo
 - Lyrics/subtitle settings use distinct archive profiles to allow media enrichment.
 - Catalog queue details remain readable across the earlier local-build rollback.
 - Release notice collection preserves multiline package metadata without email-header parsing errors.
+- Native CI provisioning uses scoped GitHub API authentication to avoid shared-runner rate limits.
 
 ### Validation and limits
 - Windows unit, GUI and real download checks are documented in `docs/VERIFICATION.md`.
@@ -35,4 +36,3 @@ First public open-source release. Earlier development builds were distributed lo
 
 [Unreleased]: https://github.com/Slulisee/SSYTDLP/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/Slulisee/SSYTDLP/releases/tag/v1.0.0
-
