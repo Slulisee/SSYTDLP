@@ -19,7 +19,10 @@ def collect_notices(root):
             continue
         target = root / 'licenses' / 'python-packages' / name
         target.mkdir(parents=True, exist_ok=True)
-        (target / 'METADATA.txt').write_text(str(distribution.metadata), encoding='utf-8')
+        # Preserve the original metadata. Serializing email.Message can reject
+        # valid multiline package descriptions as embedded header fields.
+        package_metadata = distribution.read_text('METADATA') or distribution.read_text('PKG-INFO')
+        (target / 'METADATA.txt').write_text(package_metadata or f'Name: {name}\nVersion: {distribution.version}\n', encoding='utf-8')
         for index, file in enumerate(distribution.files or []):
             if 'license' in file.name.lower() or 'copying' in file.name.lower():
                 path = distribution.locate_file(file)
@@ -57,3 +60,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
