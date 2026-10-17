@@ -1,12 +1,12 @@
 # Personal use and source transparency
 
-SSYTDLP is intended for personal use. Download only material you own or have
+SSMD is intended for personal use. Download only material you own or have
 permission to copy, and respect applicable law and the source service's terms.
 A private-use label does not itself grant copying rights or access to restricted
-content. SSYTDLP does not remove DRM, provide paid-service audio access or collect
+content. SSMD does not remove DRM, provide paid-service audio access or collect
 account passwords. Optional cookie settings pass your selected browser session or a session-only imported file to the local nightly engine. See the [cookie guide](docs/COOKIES.md) for storage, export and clearing behavior.
 
-Spotify, Deezer and Apple Music links supply public catalog metadata. SSYTDLP
+Spotify, Deezer and Apple Music links supply public catalog metadata. SSMD
 searches YouTube for a matching recording and downloads that recording using
 yt-dlp nightly. The catalog provider is shown in the preview, and the actual
 YouTube title and URL appear in the log. A match may be a different release;
@@ -19,7 +19,7 @@ restore lost quality.
 
 Optional lyrics lookup sends track title, artist, album when available and duration to LRCLIB using
 the open-source syncedlyrics provider. LRCLIB is a community database: coverage,
-accuracy and timing vary. SSYTDLP checks identity, duration and content before
+accuracy and timing vary. SSMD checks identity, duration and content before
 saving a match; unsuccessful lyrics lookup retains the media file. The matching
 record URL is saved in a .lyrics.json attribution file.
 

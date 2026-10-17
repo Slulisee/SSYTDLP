@@ -1,11 +1,11 @@
-# SSYTDLP appearance
+# SSMD appearance
 
 The downloader now follows the supplied Ocean-blue and Carbon-monochrome design
 references, with a left sidebar, rounded cards, scalable native controls, consistent
 icons, gradients and a useful empty queue. Its download engine and media features
 remain the same. History presents the existing session activity log.
 
-![Ocean reference theme](docs/screenshots/ocean.png)
+![Ocean reference theme](docs/screenshots/bulk-downloader.png)
 
 ![Visual theme selection](docs/screenshots/themes.png)
 
@@ -62,8 +62,8 @@ and run `python source/build.py`. Tkinter is no longer the application view.
 The Windows build helper isolates dependency scanning from unrelated tools on
 PATH so their ICU/Qt libraries do not leak into the portable runtime.
 
-On Windows, extract the entire **SSYTDLP-Windows-AMD64.zip** and run
-`SSYTDLP.exe`. Keep `_internal` and `tools` with it. Replacing only the EXE is
+On Windows, extract the entire **SSMD-Windows-AMD64.zip** and run
+`SSMD.exe`. Keep `_internal` and `tools` with it. Replacing only the EXE is
 insufficient. Earlier releases remain available from GitHub Releases.
 Native macOS/Linux execution of this redesign is not verified on this Windows host.
 Qt's pinned macOS wheel requires macOS 14 or newer.

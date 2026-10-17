@@ -1,2 +1,2 @@
 """Application version, independent from yt-dlp nightly."""
-APP_VERSION = '1.3.0'
+APP_VERSION = '1.4.0'

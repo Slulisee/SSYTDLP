@@ -23,7 +23,7 @@ class UpdateCard(Card):
         self.status_key = 'app_version'
         self.status_values = {'version': APP_VERSION}
         app.heading(self.body, 'app_updates', 'refresh', 'app_update_hint')
-        self.body.addWidget(text_label('SSYTDLP ' + APP_VERSION, 'heading'))
+        self.body.addWidget(text_label('SSMD ' + APP_VERSION, 'heading'))
         self.status = text_label('', 'muted', True)
         self.body.addWidget(self.status)
         self.progress = QProgressBar()

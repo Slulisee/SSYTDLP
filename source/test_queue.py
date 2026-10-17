@@ -102,7 +102,7 @@ class QueueTests(unittest.TestCase):
             self.assertTrue(all(field == fields[0] for field in fields), key)
             for lang in LANGUAGES:
                 self.assertTrue(tr(lang, key, **{name: '1' for name in fields[0]}), (lang, key))
-        self.assertEqual(APP_NAME, 'SSYTDLP')
+        self.assertEqual(APP_NAME, 'SSMD')
         self.assertEqual(tr('de', 'settings'), 'Einstellungen')
 
     def test_wallpaper_import_preserves_original_and_decodes_copy(self):

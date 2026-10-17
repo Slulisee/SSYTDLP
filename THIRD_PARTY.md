@@ -1,6 +1,6 @@
 # Open-source dependencies and credits
 
-SSYTDLP's own application source is MIT licensed; this does not replace the
+SSMD's own application source is MIT licensed; this does not replace the
 licenses of linked or bundled dependencies. Packaged executables include GPL
 components and their distribution must also meet those licenses. Complete app
 source and build scripts are published here. Notices are in `licenses/` and

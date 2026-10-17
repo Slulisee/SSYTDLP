@@ -1,6 +1,6 @@
 # Contributing
 
-Keep SSYTDLP small and practical. Open an issue for larger changes and use a pull
+Keep SSMD small and practical. Open an issue for larger changes and use a pull
 request for fixes. Describe the trigger, resulting behavior and actual checks.
 
 1. Follow [BUILD.md](docs/BUILD.md) and run the unit suite.

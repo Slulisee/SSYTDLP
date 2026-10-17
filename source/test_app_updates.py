@@ -11,7 +11,7 @@ from unittest.mock import patch
 import app_updates as updates
 
 
-def fixture(tag='v1.4.0', name='SSYTDLP-Windows-AMD64-Update.exe', data=b'installer fixture'):
+def fixture(tag='v1.4.0', name='SSMD-Windows-AMD64-Update.exe', data=b'installer fixture'):
     return dict(tag_name=tag, html_url=updates.RELEASES + '/tag/' + tag,
         assets=[dict(name=name, size=len(data), digest='sha256:' + hashlib.sha256(data).hexdigest(),
                      browser_download_url=updates.release_url(tag, name))])
@@ -76,7 +76,7 @@ class AppUpdateTests(unittest.TestCase):
     def test_installer_is_reverified_and_uses_native_command_with_space_path(self):
         asset=updates.parse_release(fixture(),system='Windows',machine='amd64',lightweight=True).asset
         with tempfile.TemporaryDirectory(prefix='app update ') as temp:
-            home=Path(temp)/'installed app';home.mkdir();(home/'SSYTDLP.exe').touch()
+            home=Path(temp)/'installed app';home.mkdir();(home/'SSMD.exe').touch()
             exe=Path(temp)/asset.name;exe.write_bytes(b'installer fixture')
             with patch.object(updates.platform,'system',return_value='Windows'),patch.object(updates.subprocess,'Popen') as launch:
                 updates.launch_installer(exe,home,asset)

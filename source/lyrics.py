@@ -56,7 +56,7 @@ class LyricsResult:
 class LyricsFinder:
     def __init__(self):
         self.provider = Lrclib()
-        self.provider.session.headers.update({'User-Agent': 'SSYTDLP/3.0 (personal desktop lyrics client)'})
+        self.provider.session.headers.update({'User-Agent': 'SSMD/3.0 (personal desktop lyrics client)'})
         from requests.adapters import HTTPAdapter
         from urllib3.util.retry import Retry
         self.provider.session.mount('https://lrclib.net/', HTTPAdapter(max_retries=Retry(total=2, backoff_factor=.5, status_forcelist=[429, 500, 502, 503, 504], respect_retry_after_header=False)))

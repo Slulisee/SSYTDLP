@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.4.0 — 2026-10-17
+
+- Rename the app to **Slulisee's simple media downloader / SSMD**, including translated UI, executables, native packages, Windows setup, shortcuts and current guides. Keep **made by Slulisee**.
+- Copy legacy settings, queue and wallpaper into the new SSMD data folder on first launch, retaining the original data for rollback. Preserve tools and replace legacy Windows registration during an in-place upgrade.
+- Keep the existing GitHub URL, legacy update asset aliases and private media/handoff protocol identifiers compatible so existing SSYTDLP users can update normally.
+
 ## 1.3.0 — 2026-10-17
 
 - Add a Windows per-user installer, Start menu entry, uninstaller and in-place upgrades that retain settings, queue, media and existing engines.

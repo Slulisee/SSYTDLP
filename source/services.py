@@ -21,7 +21,7 @@ def catalog_provider(url):
 
 
 def get_data(url, as_json=True):
-    with urlopen(Request(url, headers={'User-Agent': 'Mozilla/5.0 SSYTDLP/3.0 (public catalog preview)'}), timeout=20) as response:
+    with urlopen(Request(url, headers={'User-Agent': 'Mozilla/5.0 SSMD/3.0 (public catalog preview)'}), timeout=20) as response:
         data = response.read(8_000_001)
     if len(data) > 8_000_000:
         raise ValueError('Catalog response exceeded the preview size limit.')

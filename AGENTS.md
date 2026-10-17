@@ -1,6 +1,6 @@
-# SSYTDLP maintenance
+# SSMD maintenance
 
-- Preserve the product name SSYTDLP and watermark made by Slulisee.
+- Preserve the product name SSMD and watermark made by Slulisee.
 - Keep the interface simple and use official yt-dlp nightly with checksum verification.
 - Add user-visible changes/fixes to CHANGELOG.md under Unreleased for every update.
 - Update guides when behavior changes and real screenshots when the UI changes.

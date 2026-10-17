@@ -10,11 +10,11 @@ import sys
 def main():
     root = Path(__file__).resolve().parent.parent
     destination = root / 'dist'
-    args = [sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--windowed', '--onedir', '--name', 'SSYTDLP', '--distpath', str(destination), '--workpath', str(root / 'build'), '--specpath', str(root / 'build')]
+    args = [sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--windowed', '--onedir', '--name', 'SSMD', '--distpath', str(destination), '--workpath', str(root / 'build'), '--specpath', str(root / 'build')]
     if sys.platform == 'win32':
         args += ['--icon', str(root / 'source/app.ico')]
     if sys.platform == 'darwin':
-        args += ['--osx-bundle-identifier', 'app.slulisee.ssytdlp']
+        args += ['--osx-bundle-identifier', 'app.slulisee.ssmd']
     args += [str(root / 'source/app.py')]
     env = os.environ.copy()
     if sys.platform == 'win32':
@@ -24,7 +24,7 @@ def main():
         paths = [Path(sys.executable).parent, Path(sys.base_prefix), windows / 'System32', windows]
         env['PATH'] = os.pathsep.join(str(path) for path in paths if path.is_dir())
     subprocess.run(args, check=True, env=env)
-    target = destination / 'SSYTDLP.app/Contents/MacOS' if sys.platform == 'darwin' else destination / 'SSYTDLP'
+    target = destination / 'SSMD.app/Contents/MacOS' if sys.platform == 'darwin' else destination / 'SSMD'
     shutil.copytree(root / 'source/plugin_bundle', target / 'plugin_bundle', dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
     shutil.copytree(root / 'tools', target / 'tools', dirs_exist_ok=True)
     shutil.copytree(root / 'licenses', target / 'licenses', dirs_exist_ok=True)

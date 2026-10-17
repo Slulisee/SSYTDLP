@@ -1,4 +1,4 @@
-"""Rounded native Qt widgets and code-drawn icons for the SSYTDLP view."""
+"""Rounded native Qt widgets and code-drawn icons for the SSMD view."""
 from __future__ import annotations
 from PySide6.QtCore import QByteArray, QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QIcon, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap, QRadialGradient

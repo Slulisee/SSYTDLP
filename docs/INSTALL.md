@@ -1,22 +1,22 @@
-# Install SSYTDLP
+# Install SSMD
 
 Get packages from [GitHub Releases](https://github.com/Slulisee/SSYTDLP/releases).
 Choose your OS and CPU. Source archives also work with the instructions below.
 
 ## Windows x64
 
-Recommended: run **SSYTDLP-Windows-AMD64-Setup.exe** from
-[Releases](https://github.com/Slulisee/SSYTDLP/releases/latest). Open SSYTDLP from
+Recommended: run **SSMD-Windows-AMD64-Setup.exe** from
+[Releases](https://github.com/Slulisee/SSYTDLP/releases/latest). Open SSMD from
 the Start menu. Setup installs for your Windows user under
-`%LOCALAPPDATA%/Programs/SSYTDLP` by default. Re-running setup upgrades that folder.
-Use Windows **Installed apps → SSYTDLP → Uninstall** to remove the program.
+`%LOCALAPPDATA%/Programs/SSMD` by default. Re-running setup upgrades that folder.
+Use Windows **Installed apps → SSMD → Uninstall** to remove the program.
 Uninstall keeps your separate settings, queue, wallpaper and downloaded media.
 
 The portable ZIP remains available:
 
-1. Download the `SSYTDLP-Windows-AMD64.zip` release asset.
+1. Download the `SSMD-Windows-AMD64.zip` release asset.
 2. Right-click the ZIP → **Extract all** into a folder you can keep.
-3. Open the extracted folder and double-click **SSYTDLP.exe**.
+3. Open the extracted folder and double-click **SSMD.exe**.
 4. Choose your download folder in the app.
 
 No Python install is needed. Keep the entire `_internal` and `tools` folders alongside the EXE;
@@ -42,7 +42,7 @@ checksum-verified yt-dlp nightly plus Deno. With multiple Python installs, ensur
 `python3 --version` selects Python 3.12. The pinned Qt wheel requires macOS 14 or newer.
 
 If a native archive is available, select the CPU in its filename, extract it and
-open `SSYTDLP.app`. Install FFmpeg first. These community builds are unsigned and
+open `SSMD.app`. Install FFmpeg first. These community builds are unsigned and
 not notarized. Local builds on your Mac are documented in [BUILD.md](BUILD.md).
 
 ## Linux
@@ -61,13 +61,13 @@ bash Run.sh
 ```
 
 A graphical X11/Wayland desktop is required. The launcher installs PySide6/Qt. A native Linux
-archive, when provided, contains the `SSYTDLP` folder with its executable, `_internal/` and `tools/`; keep them
-together, and run `./SSYTDLP`. Install FFmpeg separately. Builds made on Ubuntu
+archive, when provided, contains the `SSMD` folder with its executable, `_internal/` and `tools/`; keep them
+together, and run `./SSMD`. Install FFmpeg separately. Builds made on Ubuntu
 22.04 target glibc 2.35 or newer; not every Linux distribution is verified.
 
 ## Updates and saved data
 
-Open **Settings → App updates** to check the latest stable SSYTDLP version and
+Open **Settings → App updates** to check the latest stable SSMD version and
 download a package with SHA256 verification. On Windows, **Install update…** saves
 your queue, closes the app, and opens setup at the existing app folder. Finish
 the wizard to reopen the app. A smaller Update installer keeps existing engines.
@@ -77,9 +77,9 @@ Settings and queue are stored outside the program:
 
 | OS | Settings folder |
 | --- | --- |
-| Windows | `%LOCALAPPDATA%/SSYTDLP` |
-| macOS | `~/Library/Application Support/SSYTDLP` |
-| Linux | `$XDG_CONFIG_HOME/SSYTDLP` or `~/.config/SSYTDLP` |
+| Windows | `%LOCALAPPDATA%/SSMD` |
+| macOS | `~/Library/Application Support/SSMD` |
+| Linux | `$XDG_CONFIG_HOME/SSMD` or `~/.config/SSMD` |
 
 **Update nightly** updates the bundled engine from the official nightly channel,
 checks its SHA256, and keeps one previous engine. It does not update the GUI.

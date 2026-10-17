@@ -1,4 +1,4 @@
-# How to use SSYTDLP
+# How to use SSMD
 
 ## Add links first, download later
 
@@ -79,7 +79,7 @@ The selection marks are indicators; use the editor to change the selected videos
 The source status column reports the playlist's download state. Progress and
 cancellation remain available during downloads; selection editing resumes when idle.
 
-![Detailed queue](screenshots/queue-details.png)
+![Detailed queue](screenshots/bulk-queue.png)
 
 Metadata thumbnails load only as needed and share a bounded cache. Missing or
 failed artwork uses a fallback icon. The compact downloader row uses artwork from

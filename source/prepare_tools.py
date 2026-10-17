@@ -14,7 +14,7 @@ from urllib.request import Request, urlopen
 
 
 def fetch(url):
-    with urlopen(Request(url, headers=github_headers(url, 'SSYTDLP/1.0 setup')), timeout=90) as response:
+    with urlopen(Request(url, headers=github_headers(url, 'SSMD/1.0 setup')), timeout=90) as response:
         return response.read()
 
 

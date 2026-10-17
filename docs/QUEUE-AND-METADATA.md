@@ -6,7 +6,7 @@
 - Use **Add multiple links** to paste one link per line. Whitespace-separated links also work. The whole input is checked before adding anything. Duplicate staged sources are skipped, including common YouTube tracking variants.
 - Click **Fetch queued links** on the Downloader page or open **Queue → Fetch queued links** when ready. Both buttons use the same batch-fetch action and open the detailed queue. Titles, thumbnails and playlist contents load together. Every available entry starts selected; **Edit selection** changes a source’s choices.
 - Filter by source or search across the queue. Select a source row and choose **Remove** to discard a failed or unwanted source. Fetch again to retry failures. Cancellation leaves unfinished links saved for later.
-- Choose your format, metadata options and destination under **Download options**, then **Download queue**. If links remain unresolved, SSYTDLP fetches them first. It starts downloading only when that fetch completes without errors or cancellation. Fix or remove failed links before starting again.
+- Choose your format, metadata options and destination under **Download options**, then **Download queue**. If links remain unresolved, SSMD fetches them first. It starts downloading only when that fetch completes without errors or cancellation. Fix or remove failed links before starting again.
 
 **Preview / Add** is still available for inspecting a single link before adding it. It is optional.
 

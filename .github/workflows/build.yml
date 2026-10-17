@@ -1,4 +1,4 @@
-name: Build SSYTDLP
+name: Build SSMD
 on:
   push:
     branches: [main]
@@ -35,7 +35,7 @@ jobs:
         run: python -m unittest discover -s source -p 'test_*.py' -v
       - name: Provision nightly, Deno and release dependencies
         env:
-          SSYTDLP_GITHUB_TOKEN: ${{ github.token }}
+          SSMD_GITHUB_TOKEN: ${{ github.token }}
         run: python source/prepare_release.py
       - name: Build native GUI
         run: python source/build.py
@@ -62,7 +62,7 @@ jobs:
         run: python source/verify_installer.py
       - uses: actions/upload-artifact@v7
         with:
-          name: SSYTDLP-${{ runner.os }}-${{ runner.arch }}
+          name: SSMD-${{ runner.os }}-${{ runner.arch }}
           path: native-artifacts/
           if-no-files-found: error
   publish:

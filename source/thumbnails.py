@@ -45,7 +45,7 @@ class ThumbnailCache(QObject):
             except queue.Empty:continue
             data=b''
             try:
-                with urlopen(Request(url,headers={'User-Agent':'SSYTDLP/2.0'}),timeout=8) as response:
+                with urlopen(Request(url,headers={'User-Agent':'SSMD/2.0'}),timeout=8) as response:
                     # Redirects must also resolve to an HTTP(S) resource.
                     validate_url(response.geturl())
                     raw=response.read(4_000_001)

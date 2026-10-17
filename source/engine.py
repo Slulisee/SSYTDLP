@@ -20,8 +20,8 @@ from cookie_support import CookieSource, cookie_args, redact
 from platform_support import executable_name, nightly_asset, tool_args, tool_path
 
 
-APP_NAME = 'SSYTDLP'
-APP_FULL_NAME = "Slulisee's Simple yt-dlp Downloader"
+APP_NAME = 'SSMD'
+APP_FULL_NAME = "Slulisee's simple media downloader"
 NIGHTLY_REPO = 'https://api.github.com/repos/yt-dlp/yt-dlp-nightly-builds/releases/latest'
 PRESETS = {
     '1080p video · MP4': ('video', '1080', 'mp4'),
@@ -272,11 +272,11 @@ class Download:
             cookie_context.close()
 
 
-def github_headers(url: str, user_agent='SSYTDLP/1.0') -> dict:
+def github_headers(url: str, user_agent='SSMD/1.0') -> dict:
     headers = {'User-Agent': user_agent}
     # CI's short-lived token avoids shared-runner API rate limits. It is never
     # sent to download mirrors, catalog services or non-HTTPS endpoints.
-    token = os.environ.get('SSYTDLP_GITHUB_TOKEN')
+    token = os.environ.get('SSMD_GITHUB_TOKEN') or os.environ.get('SSYTDLP_GITHUB_TOKEN')
     parsed = urlsplit(url)
     if token and parsed.scheme == 'https' and parsed.netloc == 'api.github.com':
         headers['Authorization'] = 'Bearer ' + token
@@ -284,7 +284,7 @@ def github_headers(url: str, user_agent='SSYTDLP/1.0') -> dict:
 
 
 def _get(url: str) -> bytes:
-    with urlopen(Request(url, headers=github_headers(url, 'SSYTDLP/2.0')), timeout=45) as response:
+    with urlopen(Request(url, headers=github_headers(url, 'SSMD/2.0')), timeout=45) as response:
         return response.read()
 
 

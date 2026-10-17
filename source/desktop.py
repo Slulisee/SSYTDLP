@@ -1,4 +1,4 @@
-"""SSYTDLP's themed Qt view. Downloads continue through the existing engine/queue."""
+"""SSMD's themed Qt view. Downloads continue through the existing engine/queue."""
 from __future__ import annotations
 from pathlib import Path
 import json
@@ -24,6 +24,7 @@ from cookie_support import BROWSERS, CookieSource, redact
 from cookie_page import CookieCard
 from link_dialog import BulkDialog
 from update_page import UpdateCard
+from data_migration import user_data_directory
 from version import APP_VERSION
 from qt_dialogs import SelectionDialog
 from thumbnails import ThumbnailCache, ThumbnailCell
@@ -53,7 +54,7 @@ class App(QMainWindow):
     def __init__(self,settings_path=None,tools=None):
         super().__init__()
         self.home=app_directory();self.tools=Path(tools) if tools else self.home/'tools'
-        self.settings_path=Path(settings_path) if settings_path else config_directory()/'settings.json'
+        self.settings_path=Path(settings_path) if settings_path else user_data_directory()/'settings.json'
         settings=load_settings(self.settings_path)
         if settings_path is None and not self.settings_path.exists():
             settings=load_settings(config_directory().parent/'yt-dlp Simple/settings.json')
@@ -146,7 +147,7 @@ class App(QMainWindow):
         brand=QHBoxLayout();brand.setSpacing(11);self.brand_icon=BrandIcon(self)
         brand.addWidget(self.brand_icon)
         texts=QVBoxLayout();texts.setSpacing(1);texts.addWidget(text_label(APP_NAME,'title'))
-        subtitle=text_label("Slulisee's Simple yt-dlp\nDownloader",'muted');subtitle.setStyleSheet('font-size: 11px;')
+        subtitle=text_label("Slulisee's simple\nmedia downloader",'muted');subtitle.setStyleSheet('font-size: 11px;')
         texts.addWidget(subtitle);brand.addLayout(texts,1);side.addLayout(brand);side.addSpacing(23)
         self.nav={}
         for page,key,symbol in [('downloader','nav_downloader','home'),('queue','nav_queue','queue'),('history','nav_history','clock'),('settings','settings','settings'),('about','nav_about','info')]:
@@ -261,7 +262,7 @@ class App(QMainWindow):
         card=Card(self);brand=QHBoxLayout();brand.addWidget(BrandIcon(self,64));brand.addSpacing(9)
         texts=QVBoxLayout();texts.addWidget(text_label(APP_NAME,'title'));texts.addWidget(text_label(APP_FULL_NAME,'muted',True));brand.addLayout(texts,1);card.body.addLayout(brand)
         card.body.addWidget(self.label('about_hint','',True));card.body.addWidget(text_label('made by Slulisee','muted'))
-        card.body.addWidget(text_label('SSYTDLP '+APP_VERSION,'muted'))
+        card.body.addWidget(text_label('SSMD '+APP_VERSION,'muted'))
         card.body.addWidget(self.label('service_help','',True));card.body.addWidget(self.label('disclaimer','muted',True));layout.addWidget(card);layout.addStretch()
         return scroll_page(content)
 
@@ -767,8 +768,8 @@ def main():
     from app_updates import hold_application_mutex
     application_mutex=hold_application_mutex()
     qt=QApplication(sys.argv[:1]);qt.setStyle('Fusion');qt.setApplicationName(APP_NAME);qt.setOrganizationName('Slulisee')
-    smoke=len(sys.argv)>2 and sys.argv[1]=='--smoke-test'
-    app=App(Path(sys.argv[2]).with_suffix('.settings.json') if smoke else None)
+    smoke=len(sys.argv)>2 and sys.argv[1] in ('--smoke-test','--smoke-test-user-data')
+    app=App(Path(sys.argv[2]).with_suffix('.settings.json') if smoke and sys.argv[1]=='--smoke-test' else None)
     app.show()
     if smoke:
         def verify():
@@ -787,6 +788,7 @@ def main():
             finally:fixture.unlink(missing_ok=True)
             values=dict(title=app.windowTitle(),presets=list(PRESETS),nightly=app.read_version().replace('\n',' '),mapped=app.isVisible(),
                 app_version=APP_VERSION,app_updates=app.settings_page.update_card.check_button.text(),
+                app_data_name=app.settings_path.parent.name,record_count=len(app.records),
                 buttons=[app.download_button.text(),app.add_button.text(),app.nav['settings'].text()],languages=LANGUAGES,
                 theme=app.theme,themes=list(THEMES),watermark='made by Slulisee',extras=[app.t(k) for k in ('metadata','cover','organize','skip','lyrics','subtitles')],
                 lyric_provider=type(LyricsFinder().provider).__name__,spotify_import=catalog_provider('https://open.spotify.com/track/example'),

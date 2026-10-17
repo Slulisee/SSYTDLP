@@ -24,8 +24,8 @@ def quoted(value):
 
 def main():
     root = Path(__file__).resolve().parent.parent
-    app = root / 'dist/SSYTDLP'
-    if not (app / 'SSYTDLP.exe').is_file():
+    app = root / 'dist/SSMD'
+    if not (app / 'SSMD.exe').is_file():
         raise FileNotFoundError('Build the Windows app first')
     work = root / 'build/installer'
     work.mkdir(parents=True, exist_ok=True)
@@ -52,7 +52,7 @@ def main():
                 current = parent
             lines.append(f'File "{quoted(p)}"')
         payload.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-        target = output / f'SSYTDLP-Windows-AMD64-{mode}.exe'
+        target = output / f'SSMD-Windows-AMD64-{mode}.exe'
         args = [compiler(), '/V2', '/DROOT=' + str(root), '/DVERSION=' + APP_VERSION,
             '/DOUTPUT=' + str(target), '/DPAYLOAD=' + str(payload), '/DUNINSTALL_FILES=' + str(uninstall)]
         if mode == 'Update':
@@ -63,6 +63,9 @@ def main():
         subprocess.run(args + [str(root / 'source/installer.nsi')], check=True, env=env)
         checksum = hashlib.sha256(target.read_bytes()).hexdigest()
         target.with_suffix('.exe.sha256').write_text(checksum + '  ' + target.name + '\n', encoding='ascii')
+        legacy = target.with_name(target.name.replace('SSMD-', 'SSYTDLP-', 1))
+        shutil.copy2(target, legacy)
+        legacy.with_suffix('.exe.sha256').write_text(checksum + '  ' + legacy.name + '\n', encoding='ascii')
         print(f'{target.name}: {target.stat().st_size} bytes; SHA256 {checksum}', flush=True)
 
 

@@ -38,15 +38,15 @@ def tool_args(tools):
     return args
 
 
-def config_directory(system=None, environ=None, home=None):
+def config_directory(system=None, environ=None, home=None, product='SSMD'):
     system = system or platform.system()
     environ = os.environ if environ is None else environ
     home = Path.home() if home is None else Path(home)
     if system == 'Windows':
-        return Path(environ.get('LOCALAPPDATA', home / 'AppData/Local')) / 'SSYTDLP'
+        return Path(environ.get('LOCALAPPDATA', home / 'AppData/Local')) / product
     if system == 'Darwin':
-        return home / 'Library/Application Support/SSYTDLP'
-    return Path(environ.get('XDG_CONFIG_HOME', home / '.config')) / 'SSYTDLP'
+        return home / 'Library/Application Support' / product
+    return Path(environ.get('XDG_CONFIG_HOME', home / '.config')) / product
 
 
 def open_folder(path):

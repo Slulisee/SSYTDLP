@@ -88,9 +88,9 @@ class FeatureTests(unittest.TestCase):
 
     def test_platform_paths_and_release_assets(self):
         home = Path('/home/example')
-        self.assertEqual(config_directory('Linux',{},home),home/'.config/SSYTDLP')
-        self.assertEqual(config_directory('Darwin',{},home),home/'Library/Application Support/SSYTDLP')
-        self.assertEqual(config_directory('Windows',{'LOCALAPPDATA':'local'},home),Path('local/SSYTDLP'))
+        self.assertEqual(config_directory('Linux',{},home),home/'.config/SSMD')
+        self.assertEqual(config_directory('Darwin',{},home),home/'Library/Application Support/SSMD')
+        self.assertEqual(config_directory('Windows',{'LOCALAPPDATA':'local'},home),Path('local/SSMD'))
         self.assertEqual(nightly_asset('Darwin','arm64'),'yt-dlp_macos')
         self.assertEqual(nightly_asset('Linux','aarch64'),'yt-dlp_linux_aarch64')
         self.assertEqual(nightly_asset('Linux','x86_64'),'yt-dlp_linux')

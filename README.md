@@ -1,15 +1,19 @@
-# SSYTDLP
+# SSMD
 
-**Slulisee's Simple yt-dlp Downloader** · made by Slulisee
+**Slulisee's simple media downloader** · made by Slulisee
+
+Formerly SSYTDLP. The repository URL stays the same so existing app updaters
+continue to work. Version 1.4.0 upgrades the existing app and imports its saved
+settings, queue and wallpaper into SSMD without deleting the old data.
 
 A small, practical desktop GUI for **yt-dlp nightly**. Collect links first,
 fetch playlists together, choose what you want, and download when you're ready.
 
 [Download](https://github.com/Slulisee/SSYTDLP/releases/latest) ·
 [Install](docs/INSTALL.md) · [How to use](docs/USAGE.md) ·
-[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.3.0.md) · [Contribute](CONTRIBUTING.md)
+[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.4.0.md) · [Contribute](CONTRIBUTING.md)
 
-![SSYTDLP expanded downloader queue](docs/screenshots/bulk-downloader.png)
+![SSMD expanded downloader queue](docs/screenshots/bulk-downloader.png)
 
 ## What it does
 
@@ -30,10 +34,10 @@ fetch playlists together, choose what you want, and download when you're ready.
 
 ## Install
 
-**Windows x64:** download **SSYTDLP-Windows-AMD64-Setup.exe** from
+**Windows x64:** download **SSMD-Windows-AMD64-Setup.exe** from
 [Releases](https://github.com/Slulisee/SSYTDLP/releases/latest), run setup, and open
-SSYTDLP from the Start menu. No administrator account is needed. A portable ZIP is
-also available; extract the whole archive and keep `_internal` and `tools` beside `SSYTDLP.exe`.
+SSMD from the Start menu. No administrator account is needed. A portable ZIP is
+also available; extract the whole archive and keep `_internal` and `tools` beside `SSMD.exe`.
 Windows release builds include FFmpeg, ffprobe, Deno and yt-dlp nightly.
 
 For future updates, open **Settings → App updates → Check for app updates**.
@@ -96,7 +100,7 @@ The complete application source, tests and build scripts are public in `source/`
 Python 3.12 is required; the pinned requirements install PySide6/Qt. See [BUILD.md](docs/BUILD.md) for the commands.
 No API key or account login is required for the implemented public-source routes.
 
-SSYTDLP's own source is [MIT licensed](LICENSE). Dependencies retain their own
+SSMD's own source is [MIT licensed](LICENSE). Dependencies retain their own
 open-source licenses, including GPL components in packaged builds; see
 [THIRD_PARTY.md](THIRD_PARTY.md) and `licenses/` for notices and source links.
 

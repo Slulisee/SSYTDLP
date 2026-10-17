@@ -36,9 +36,9 @@ python source/build.py
 python source/package_native.py
 ```
 
-Output: Windows `dist/SSYTDLP/SSYTDLP.exe`, macOS `dist/SSYTDLP.app`, or Linux
-`dist/SSYTDLP/SSYTDLP`. Archives and SHA256 files go into `native-artifacts/`.
-Keep packaged `_internal`, `tools` and `plugin_bundle` with the program. The bundled SSYTDLP metadata processor runs before filenames and embedded tags are written. macOS/Linux use externally installed FFmpeg.
+Output: Windows `dist/SSMD/SSMD.exe`, macOS `dist/SSMD.app`, or Linux
+`dist/SSMD/SSMD`. Archives and SHA256 files go into `native-artifacts/`.
+Keep packaged `_internal`, `tools` and `plugin_bundle` with the program. The bundled SSMD metadata processor runs before filenames and embedded tags are written. macOS/Linux use externally installed FFmpeg.
 Windows provisioning downloads and checksum-verifies the Gyan essentials FFmpeg build.
 
 `prepare_tools.py` provisions official nightly and Deno; `prepare_release.py`
@@ -75,12 +75,12 @@ Native archives are unsigned. Signing/notarization is not configured.
 
 Install NSIS 3.x or point `NSIS_MAKENSIS` at a portable compiler's `makensis.exe`.
 After `build.py`, run `python source/build_installer.py`. It creates the full
-`SSYTDLP-Windows-AMD64-Setup.exe` and smaller `SSYTDLP-Windows-AMD64-Update.exe`,
+`SSMD-Windows-AMD64-Setup.exe` and smaller `SSMD-Windows-AMD64-Update.exe`,
 with individual SHA256 files, under `native-artifacts/`.
 `python source/verify_installer.py` exercises fresh installation, update, engine
 retention, incomplete-folder rejection, running-app guard and uninstall in a
 fresh `build/installer-verification` folder. It restores the previous product
-registry entries and Start menu shortcut. Do not run it with SSYTDLP open.
+registry entries and Start menu shortcut. Do not run it with SSMD open.
 
 `source/version.py` is the GUI version. Update it with the release tag and dated
 changelog. `app_updates.py` checks only this repository's stable releases and

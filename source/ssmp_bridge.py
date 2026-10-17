@@ -34,6 +34,7 @@ def publish(paths, destination='', metadata=None, source='') -> Path | None:
         return None
     inbox = Path(destination).expanduser() if destination.strip() else default_inbox()
     inbox.mkdir(parents=True, exist_ok=True)
+    # Preserve the v1 handoff identity understood by existing SSMP installations.
     target = inbox / ('ssytdlp-' + uuid.uuid4().hex + '.json')
     temporary = target.with_suffix('.tmp')
     try:

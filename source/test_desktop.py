@@ -78,7 +78,7 @@ class DesktopTests(unittest.TestCase):
         card=self.app.settings_page.update_card
         self.app.navigate('settings');self.app.settings_page.select_section('updates')
         content=b'Generated update fixture'
-        asset=app_updates.Asset('SSYTDLP-Windows-AMD64-Update.exe','https://example.com/fixture',len(content),hashlib.sha256(content).hexdigest(),'')
+        asset=app_updates.Asset('SSMD-Windows-AMD64-Update.exe','https://example.com/fixture',len(content),hashlib.sha256(content).hexdigest(),'')
         card.receive('app_release',app_updates.Release('1.4.0',app_updates.RELEASES+'/tag/v1.4.0',True,asset))
         with patch.object(app_updates,'urlopen',return_value=io.BytesIO(content)):
             QTest.mouseClick(card.download_button,Qt.MouseButton.LeftButton)

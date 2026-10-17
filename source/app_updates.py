@@ -14,7 +14,8 @@ from version import APP_VERSION
 REPOSITORY = 'Slulisee/SSYTDLP'
 RELEASES = f'https://github.com/{REPOSITORY}/releases'
 LATEST_API = f'https://api.github.com/repos/{REPOSITORY}/releases/latest'
-MUTEX_NAME = 'Local\\Slulisee.SSYTDLP.Application'
+MUTEX_NAME = 'Local\\Slulisee.SSMD.Application'
+LEGACY_MUTEX_NAME = 'Local\\Slulisee.SSYTDLP.Application'
 MAX_PACKAGE = 1024 * 1024 * 1024
 
 
@@ -26,13 +27,13 @@ def version_tuple(value):
 
 def release_url(tag, name):
     version_tuple(tag)
-    if not re.fullmatch(r'SSYTDLP-[A-Za-z0-9_.-]+', name):
+    if not re.fullmatch(r'(?:SSMD|SSYTDLP)-[A-Za-z0-9_.-]+', name):
         raise ValueError('Invalid release filename')
     return f'{RELEASES}/download/{tag}/{name}'
 
 
 def read_url(url, limit=2 * 1024 * 1024):
-    with urlopen(Request(url, headers={'User-Agent': f'SSYTDLP/{APP_VERSION}', 'Accept': 'application/vnd.github+json' if url == LATEST_API else 'application/octet-stream'}), timeout=30) as response:
+    with urlopen(Request(url, headers={'User-Agent': f'SSMD/{APP_VERSION}', 'Accept': 'application/vnd.github+json' if url == LATEST_API else 'application/octet-stream'}), timeout=30) as response:
         data = response.read(limit + 1)
     if len(data) > limit:
         raise ValueError('Update response is too large')
@@ -58,7 +59,7 @@ class Release:
 
 def can_install(home, system=None, frozen=False):
     home = Path(home)
-    return (system or platform.system()) == 'Windows' and frozen and (home / 'SSYTDLP.exe').is_file()
+    return (system or platform.system()) == 'Windows' and frozen and any((home / name).is_file() for name in ('SSMD.exe','SSYTDLP.exe'))
 
 
 def has_engines(home):
@@ -76,11 +77,11 @@ def parse_release(data, current=APP_VERSION, system=None, machine=None, lightwei
     system, machine = system or platform.system(), (machine or platform.machine()).lower()
     assets = {a.get('name'): a for a in data.get('assets', []) if isinstance(a, dict)}
     if system == 'Windows' and machine in ('amd64', 'x86_64'):
-        names = (['SSYTDLP-Windows-AMD64-Update.exe'] if lightweight else []) + ['SSYTDLP-Windows-AMD64-Setup.exe']
+        names = (['SSMD-Windows-AMD64-Update.exe'] if lightweight else []) + ['SSMD-Windows-AMD64-Setup.exe']
     elif system == 'Darwin' and machine in ('arm64', 'aarch64'):
-        names = ['SSYTDLP-Darwin-arm64.tar.gz']
+        names = ['SSMD-Darwin-arm64.tar.gz']
     elif system == 'Linux' and machine in ('amd64', 'x86_64'):
-        names = ['SSYTDLP-Linux-x86_64.tar.gz']
+        names = ['SSMD-Linux-x86_64.tar.gz']
     else:
         names = []
     selected = None
@@ -132,7 +133,7 @@ def download_release(asset, directory, progress=lambda *_: None, cancelled=None)
     count = 0
     digest = hashlib.sha256()
     try:
-        with urlopen(Request(asset.url, headers={'User-Agent': f'SSYTDLP/{APP_VERSION}'}), timeout=30) as response, temporary.open('wb') as output:
+        with urlopen(Request(asset.url, headers={'User-Agent': f'SSMD/{APP_VERSION}'}), timeout=30) as response, temporary.open('wb') as output:
             while True:
                 if cancelled is not None and cancelled.is_set():
                     raise UpdateCancelled()
@@ -159,7 +160,7 @@ def launch_installer(path, home, asset):
         raise ValueError('Not a Windows app installer')
     if hashlib.sha256(path.read_bytes()).hexdigest() != expected_checksum(asset):
         raise ValueError('Installer changed after download')
-    if not (home / 'SSYTDLP.exe').is_file():
+    if not any((home / name).is_file() for name in ('SSMD.exe','SSYTDLP.exe')):
         raise ValueError('App installation folder is missing')
     # NSIS requires /D last and without quotes, even when its path has spaces.
     # This is a native CreateProcess command line; no shell interprets it.
@@ -175,7 +176,9 @@ def hold_application_mutex():
     kernel = ctypes.WinDLL('kernel32', use_last_error=True)
     kernel.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_wchar_p]
     kernel.CreateMutexW.restype = ctypes.c_void_p
-    handle = kernel.CreateMutexW(None, False, MUTEX_NAME)
-    if not handle:
-        raise ctypes.WinError(ctypes.get_last_error())
-    return handle  # The process owns the handle until exit, including Qt shutdown.
+    handles = []
+    for name in (MUTEX_NAME, LEGACY_MUTEX_NAME):
+        handle = kernel.CreateMutexW(None, False, name)
+        if not handle:raise ctypes.WinError(ctypes.get_last_error())
+        handles.append(handle)
+    return handles  # Both generations of installer see running SSMD instances.
