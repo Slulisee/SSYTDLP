@@ -49,6 +49,17 @@ jobs:
         run: xvfb-run -a python source/ci_smoke.py
       - name: Package native build
         run: python source/package_native.py
+      - name: Windows installer compiler
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (!(Test-Path 'C:/Program Files (x86)/NSIS/makensis.exe')) { choco install nsis --no-progress -y }
+      - name: Build Windows setup and smaller app update
+        if: runner.os == 'Windows'
+        run: python source/build_installer.py
+      - name: Verify Windows installation and upgrade
+        if: runner.os == 'Windows'
+        run: python source/verify_installer.py
       - uses: actions/upload-artifact@v7
         with:
           name: SSYTDLP-${{ runner.os }}-${{ runner.arch }}

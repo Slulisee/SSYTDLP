@@ -23,6 +23,8 @@ from queue_model import Batch, ResolveBatch, QueueRecord, QueueStore, normalize_
 from cookie_support import BROWSERS, CookieSource, redact
 from cookie_page import CookieCard
 from link_dialog import BulkDialog
+from update_page import UpdateCard
+from version import APP_VERSION
 from qt_dialogs import SelectionDialog
 from thumbnails import ThumbnailCache, ThumbnailCell
 from queue_page import QueuePage
@@ -259,6 +261,7 @@ class App(QMainWindow):
         card=Card(self);brand=QHBoxLayout();brand.addWidget(BrandIcon(self,64));brand.addSpacing(9)
         texts=QVBoxLayout();texts.addWidget(text_label(APP_NAME,'title'));texts.addWidget(text_label(APP_FULL_NAME,'muted',True));brand.addLayout(texts,1);card.body.addLayout(brand)
         card.body.addWidget(self.label('about_hint','',True));card.body.addWidget(text_label('made by Slulisee','muted'))
+        card.body.addWidget(text_label('SSYTDLP '+APP_VERSION,'muted'))
         card.body.addWidget(self.label('service_help','',True));card.body.addWidget(self.label('disclaimer','muted',True));layout.addWidget(card);layout.addStretch()
         return scroll_page(content)
 
@@ -306,6 +309,7 @@ class App(QMainWindow):
         except Exception:
             self.wallpaper_path='';self.background.wallpaper=QPixmap()
         self.settings_page.sync_appearance();self.refresh_queue();self.preset_changed()
+        self.settings_page.update_card.translate()
         self.queue_page.translate()
         self.set_status(self.status_key,**self.status_values)
         self.background.update()
@@ -413,6 +417,7 @@ class App(QMainWindow):
         for widget in self.editable:widget.setEnabled(operation=='idle')
         self.settings_page.media_container.setEnabled(operation=='idle')
         self.settings_page.cookie_card.setEnabled(operation=='idle')
+        self.settings_page.update_card.sync_state()
         self.cancel_button.setEnabled(operation in ('preview','download','resolve'))
         self.progress.setVisible(operation!='idle')
         self.selection_state()
@@ -532,7 +537,9 @@ class App(QMainWindow):
         try:
             for _ in range(150):
                 kind,value=self.events.get_nowait()
-                if kind=='log':
+                if kind in ('app_release','app_downloaded','app_update_progress','app_update_error','app_update_cancelled'):
+                    self.settings_page.update_card.receive(kind,value)
+                elif kind=='log':
                     self.append_log(value)
                     if any(word in str(value) for word in ('[ExtractAudio]','[Merger]','[Metadata]','[EmbedThumbnail]','[VideoRemuxer]')):self.set_status('finishing')
                 elif kind=='item':
@@ -606,11 +613,12 @@ class App(QMainWindow):
 
     def closeEvent(self,event):
         if self.operation!='idle':
-            key='close_update' if self.operation=='update' else 'close_busy'
+            key='close_app_update' if self.operation in ('app_check','app_download') else 'close_update' if self.operation=='update' else 'close_busy'
             answer=QMessageBox.question(self,APP_NAME,self.t(key),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)
             if answer==QMessageBox.StandardButton.Yes:
                 self.close_pending=True
-                if self.operation!='update':self.cancel()
+                if self.operation=='app_download':self.settings_page.update_card.cancelled.set()
+                elif self.operation not in ('update','app_check'):self.cancel()
             event.ignore();return
         self.persist();self.poll_timer.stop();self.thumbnails.close();event.accept()
 
@@ -625,7 +633,7 @@ class SettingsPage(QScrollArea):
         intro.body.addLayout(language_row);layout.addWidget(intro)
         self.language.currentIndexChanged.connect(self.change_language)
         self.tabs={};tabs=self.tabs_layout=QGridLayout();tabs.setSpacing(8)
-        for index,(section,key) in enumerate([('appearance','appearance'),('media','media'),('cookies','cookies_tab'),('ssmp','SSMP'),('services','services')]):
+        for index,(section,key) in enumerate([('appearance','appearance'),('media','media'),('cookies','cookies_tab'),('updates','app_updates'),('ssmp','SSMP'),('services','services')]):
             button=QPushButton('SSMP') if section=='ssmp' else app.make_button(key,role='tab')
             button.setProperty('role','tab');button.setCheckable(True);button.setCursor(Qt.CursorShape.PointingHandCursor)
             button.clicked.connect(lambda checked=False,s=section:self.select_section(s));tabs.addWidget(button,index//3,index%3);self.tabs[section]=button
@@ -668,7 +676,8 @@ class SettingsPage(QScrollArea):
         layout.addWidget(self.media_container)
         services=Card(app);services.body.addWidget(app.label('services','heading'));services.body.addWidget(app.label('service_help','',True));services.body.addWidget(app.label('disclaimer','muted',True));layout.addWidget(services);layout.addStretch()
         self.cookie_card=CookieCard(app);layout.insertWidget(layout.count()-1,self.cookie_card)
-        self.sections={'cookies':[self.cookie_card],'appearance':[gallery_card,colors,wallpaper],'media':[media],'ssmp':[integration],'services':[services]}
+        self.update_card=UpdateCard(app);layout.insertWidget(layout.count()-1,self.update_card)
+        self.sections={'updates':[self.update_card],'cookies':[self.cookie_card],'appearance':[gallery_card,colors,wallpaper],'media':[media],'ssmp':[integration],'services':[services]}
         self.current_section='appearance';self.select_section('appearance')
         self.gallery_columns=4
 
@@ -697,7 +706,7 @@ class SettingsPage(QScrollArea):
         super().resizeEvent(event)
         self.reflow_gallery()
         if hasattr(self,'tabs'):
-            columns=5 if self.viewport().width()>950 else 3
+            columns=3
             for i,button in enumerate(self.tabs.values()):
                 self.tabs_layout.removeWidget(button);self.tabs_layout.addWidget(button,i//columns,i%columns)
 
@@ -755,6 +764,8 @@ class SettingsPage(QScrollArea):
 
 
 def main():
+    from app_updates import hold_application_mutex
+    application_mutex=hold_application_mutex()
     qt=QApplication(sys.argv[:1]);qt.setStyle('Fusion');qt.setApplicationName(APP_NAME);qt.setOrganizationName('Slulisee')
     smoke=len(sys.argv)>2 and sys.argv[1]=='--smoke-test'
     app=App(Path(sys.argv[2]).with_suffix('.settings.json') if smoke else None)
@@ -775,6 +786,7 @@ def main():
             except Exception:metadata_plugin=False
             finally:fixture.unlink(missing_ok=True)
             values=dict(title=app.windowTitle(),presets=list(PRESETS),nightly=app.read_version().replace('\n',' '),mapped=app.isVisible(),
+                app_version=APP_VERSION,app_updates=app.settings_page.update_card.check_button.text(),
                 buttons=[app.download_button.text(),app.add_button.text(),app.nav['settings'].text()],languages=LANGUAGES,
                 theme=app.theme,themes=list(THEMES),watermark='made by Slulisee',extras=[app.t(k) for k in ('metadata','cover','organize','skip','lyrics','subtitles')],
                 lyric_provider=type(LyricsFinder().provider).__name__,spotify_import=catalog_provider('https://open.spotify.com/track/example'),

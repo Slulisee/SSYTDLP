@@ -7,7 +7,7 @@ fetch playlists together, choose what you want, and download when you're ready.
 
 [Download](https://github.com/Slulisee/SSYTDLP/releases/latest) ·
 [Install](docs/INSTALL.md) · [How to use](docs/USAGE.md) ·
-[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.2.1.md) · [Contribute](CONTRIBUTING.md)
+[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.3.0.md) · [Contribute](CONTRIBUTING.md)
 
 ![SSYTDLP expanded downloader queue](docs/screenshots/bulk-downloader.png)
 
@@ -26,12 +26,20 @@ fetch playlists together, choose what you want, and download when you're ready.
 - Saved queues, cancellation, resume and duplicate skipping.
 - Official nightly engine updates with SHA256 verification.
 - Optional browser cookies or session-only cookies.txt import, with a built-in guide.
+- Windows installer with upgrades, plus an in-app update checker and verified downloads.
 
 ## Install
 
-**Windows x64:** download the Windows ZIP from [Releases](https://github.com/Slulisee/SSYTDLP/releases/latest),
-extract the **whole archive**, and run `SSYTDLP.exe`. Keep `_internal` and `tools` beside it.
+**Windows x64:** download **SSYTDLP-Windows-AMD64-Setup.exe** from
+[Releases](https://github.com/Slulisee/SSYTDLP/releases/latest), run setup, and open
+SSYTDLP from the Start menu. No administrator account is needed. A portable ZIP is
+also available; extract the whole archive and keep `_internal` and `tools` beside `SSYTDLP.exe`.
 Windows release builds include FFmpeg, ffprobe, Deno and yt-dlp nightly.
+
+For future updates, open **Settings → App updates → Check for app updates**.
+Windows can download a smaller update and open setup in the existing app folder.
+Your settings, queue, downloads and existing nightly engine remain in place.
+See the [upgrade guide](docs/UPDATES.md), including older portable copies.
 
 **macOS / Linux:** see the [platform installation guide](docs/INSTALL.md).
 You can run the source or build on your target OS. FFmpeg is installed separately.
@@ -74,6 +82,8 @@ to save. Personal use does not itself grant copying rights.
 ![Bulk playlist queue](docs/screenshots/bulk-queue.png)
 
 ![Cookie settings](docs/screenshots/cookies-settings.png)
+
+![App update settings](docs/screenshots/app-updates.png)
 
 Screenshots capture the real Windows UI. The queue preview combines a public
 SoundCloud metadata example with explicitly labeled generated layout playlists.

@@ -5,6 +5,15 @@ Choose your OS and CPU. Source archives also work with the instructions below.
 
 ## Windows x64
 
+Recommended: run **SSYTDLP-Windows-AMD64-Setup.exe** from
+[Releases](https://github.com/Slulisee/SSYTDLP/releases/latest). Open SSYTDLP from
+the Start menu. Setup installs for your Windows user under
+`%LOCALAPPDATA%/Programs/SSYTDLP` by default. Re-running setup upgrades that folder.
+Use Windows **Installed apps → SSYTDLP → Uninstall** to remove the program.
+Uninstall keeps your separate settings, queue, wallpaper and downloaded media.
+
+The portable ZIP remains available:
+
 1. Download the `SSYTDLP-Windows-AMD64.zip` release asset.
 2. Right-click the ZIP → **Extract all** into a folder you can keep.
 3. Open the extracted folder and double-click **SSYTDLP.exe**.
@@ -58,8 +67,13 @@ together, and run `./SSYTDLP`. Install FFmpeg separately. Builds made on Ubuntu
 
 ## Updates and saved data
 
-Close the app before replacing its program folder with a newer release. Keep
-your downloaded media. Settings and queue are stored outside the program:
+Open **Settings → App updates** to check the latest stable SSYTDLP version and
+download a package with SHA256 verification. On Windows, **Install update…** saves
+your queue, closes the app, and opens setup at the existing app folder. Finish
+the wizard to reopen the app. A smaller Update installer keeps existing engines.
+On macOS/Linux, open the downloaded archive's folder, close the app, and replace
+the program using the instructions above. Keep your downloaded media.
+Settings and queue are stored outside the program:
 
 | OS | Settings folder |
 | --- | --- |
@@ -69,7 +83,8 @@ your downloaded media. Settings and queue are stored outside the program:
 
 **Update nightly** updates the bundled engine from the official nightly channel,
 checks its SHA256, and keeps one previous engine. It does not update the GUI.
-Use Releases to update SSYTDLP. SHA256 files are included with release assets.
+The **App updates** page updates the GUI separately. SHA256 files are included
+with release assets. See [UPDATES.md](UPDATES.md) for older portable installations.
 
 ## Troubleshooting
 

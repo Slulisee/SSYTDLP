@@ -18,4 +18,6 @@ with tempfile.TemporaryDirectory() as directory:
     assert result['queue_page'] and result['queue_model'] == 'EntryModel', result
     assert result['thumbnail_cache'] == 'ThumbnailCache' and len(result['themes']) == 16, result
     assert result['metadata_plugin'] and result['cookie_mode']=='none' and result['staged_links']=='pending', result
+    from version import APP_VERSION
+    assert result['app_version']==APP_VERSION and result['app_updates'], result
     print('FROZEN GUI PASS: window mapped, six toggles, provider, branding, cookie settings, staged links and real nightly metadata plugin loaded')

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.3.0 — 2026-10-17
+
+- Add a Windows per-user installer, Start menu entry, uninstaller and in-place upgrades that retain settings, queue, media and existing engines.
+- Add **Settings → App updates** in all four languages: version checks, release notes, cancellable SHA256-verified downloads and Windows setup handoff. macOS/Linux downloads open for manual replacement.
+- Add a smaller Windows app-only update package so existing users do not download the engines again. Keep **Update nightly** separate.
+
 ## 1.2.1 — 2026-10-17
 
 - Add **Fetch queued links** directly to the Downloader page, using the existing batch-fetch action. It enables when unfetched links are queued and disables while busy.

@@ -71,4 +71,20 @@ and attaches native archives and checksums. Release uploads require the workflow
 
 Native archives are unsigned. Signing/notarization is not configured.
 
+## Windows installers
+
+Install NSIS 3.x or point `NSIS_MAKENSIS` at a portable compiler's `makensis.exe`.
+After `build.py`, run `python source/build_installer.py`. It creates the full
+`SSYTDLP-Windows-AMD64-Setup.exe` and smaller `SSYTDLP-Windows-AMD64-Update.exe`,
+with individual SHA256 files, under `native-artifacts/`.
+`python source/verify_installer.py` exercises fresh installation, update, engine
+retention, incomplete-folder rejection, running-app guard and uninstall in a
+fresh `build/installer-verification` folder. It restores the previous product
+registry entries and Start menu shortcut. Do not run it with SSYTDLP open.
+
+`source/version.py` is the GUI version. Update it with the release tag and dated
+changelog. `app_updates.py` checks only this repository's stable releases and
+fixed matching assets; `update_page.py` handles the Settings controls. `installer.nsi`
+owns per-user setup. The workflow runs installer verification before publication.
+
 Tests use `QT_QPA_PLATFORM=offscreen` in CI. macOS requires macOS 14+ for the pinned Qt wheel. Linux needs the system Qt/XCB/EGL dependencies listed in the workflow.

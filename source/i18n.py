@@ -135,6 +135,8 @@ STRINGS = {
 
 from ui_strings import UI_STRINGS
 STRINGS.update(UI_STRINGS)
+from update_strings import UPDATE_STRINGS
+STRINGS.update(UPDATE_STRINGS)
 
 
 def tr(language: str, key: str, **values) -> str:

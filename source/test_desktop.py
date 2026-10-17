@@ -49,6 +49,48 @@ class DesktopTests(unittest.TestCase):
         if self.app.selection_dialog:self.app.selection_dialog.reject()
         self.app.operation='idle';self.app.close();self.app.deleteLater();self.qt.processEvents();self.temp.cleanup()
 
+    def test_app_update_page_checks_async_translates_and_respects_busy_state(self):
+        from app_updates import Release, Asset
+        page=self.app.settings_page;card=page.update_card
+        self.app.navigate('settings');page.select_section('updates')
+        self.assertTrue(card.isVisible())
+        for language in desktop.LANGUAGES:
+            self.app.language=language;self.app.apply_appearance(persist=False)
+            self.assertEqual(card.check_button.text(),self.app.t('app_check'))
+            self.app.resize(900,760);self.qt.processEvents()
+            self.assertEqual(page.horizontalScrollBar().maximum(),0)
+        release=Release('1.4.0','https://github.com/Slulisee/SSYTDLP/releases/tag/v1.4.0',True,Asset('setup.exe','https://example.com',100,'a'*64,''))
+        with patch('app_updates.check_release',return_value=release):
+            QTest.mouseClick(card.check_button,Qt.MouseButton.LeftButton)
+            self.assertEqual(self.app.operation,'app_check')
+            self.until(lambda:self.app.operation=='idle')
+        self.assertTrue(card.download_button.isVisible());self.assertEqual(card.status_key,'app_available')
+        self.app.set_operation('download')
+        self.assertFalse(card.check_button.isEnabled());self.assertFalse(card.download_button.isEnabled())
+        self.app.set_operation('idle')
+        card.receive('app_update_error','Offline fixture')
+        self.assertIn('Offline fixture',card.status.text());self.assertTrue(card.check_button.isEnabled())
+
+    def test_app_update_download_reaches_verified_install_handoff(self):
+        import hashlib
+        import io
+        import app_updates
+        card=self.app.settings_page.update_card
+        self.app.navigate('settings');self.app.settings_page.select_section('updates')
+        content=b'Generated update fixture'
+        asset=app_updates.Asset('SSYTDLP-Windows-AMD64-Update.exe','https://example.com/fixture',len(content),hashlib.sha256(content).hexdigest(),'')
+        card.receive('app_release',app_updates.Release('1.4.0',app_updates.RELEASES+'/tag/v1.4.0',True,asset))
+        with patch.object(app_updates,'urlopen',return_value=io.BytesIO(content)):
+            QTest.mouseClick(card.download_button,Qt.MouseButton.LeftButton)
+            self.until(lambda:self.app.operation=='idle')
+        self.assertEqual(card.downloaded.read_bytes(),content)
+        self.assertTrue(card.install_button.isVisible());self.assertFalse(card.download_button.isVisible())
+        with patch.object(card,'installable',return_value=True),patch.object(app_updates,'launch_installer') as launch:
+            card.install()
+            launch.assert_called_once_with(card.downloaded,self.app.home,asset)
+            self.assertFalse(self.app.isVisible())
+            self.assertTrue(self.path.is_file())
+
     def until(self,predicate,timeout=4):
         end=time.monotonic()+timeout
         while not predicate() and time.monotonic()<end:
