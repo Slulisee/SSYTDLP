@@ -4,7 +4,7 @@
 
 1. Copy a video, playlist or supported music-service link into the link field.
 2. Click **Quick add**, or press Enter. This saves the link without a network request. Use **Add multiple links** to paste a multiline list.
-3. Open **Queue → Fetch queued links** to load the collected sources together. Available entries start selected. No per-link preview dialog opens.
+3. Click **Fetch queued links** on the Downloader page (or in **Queue**) to load the collected sources together. Available entries start selected. No per-link preview dialog opens.
 4. Use **Edit selection** to choose entries. Click a checkbox, double-click a row, or select rows and press Space. Use **Select all**, **Select none** or **Invert**. **Preview / Add** is also available for optional single-link preview.
 5. Pick a preset and choose **Save to** → **Browse** for the destination.
 6. Set the optional checkboxes, then click **Download queue**.

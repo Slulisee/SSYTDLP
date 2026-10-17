@@ -7,7 +7,7 @@ fetch playlists together, choose what you want, and download when you're ready.
 
 [Download](https://github.com/Slulisee/SSYTDLP/releases/latest) ·
 [Install](docs/INSTALL.md) · [How to use](docs/USAGE.md) ·
-[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.2.0.md) · [Contribute](CONTRIBUTING.md)
+[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.2.1.md) · [Contribute](CONTRIBUTING.md)
 
 ![SSYTDLP expanded downloader queue](docs/screenshots/bulk-downloader.png)
 
@@ -42,7 +42,7 @@ still needs community testing even when the native build passes CI.
 ## Use it
 
 1. Paste a link and press **Quick add** (or Enter), or use **Add multiple links**.
-2. Open **Queue → Fetch queued links**. Review all playlist entries together and edit selections as needed.
+2. Click **Fetch queued links** on the Downloader page or in **Queue**. Review all playlist entries together and edit selections as needed.
 3. Choose a preset, destination and optional metadata, lyrics or subtitles under **Download options**.
 4. Press **Download queue**. Single-link **Preview / Add** remains optional.
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.1 — 2026-10-17
+
+- Add **Fetch queued links** directly to the Downloader page, using the existing batch-fetch action. It enables when unfetched links are queued and disables while busy.
+
 ## 1.2.0 — 2026-10-17
 
 - Add session-only Netscape cookie imports, remembered browser-cookie selection, hover help and an offline export/import guide.
