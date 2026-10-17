@@ -1,12 +1,11 @@
 # How to use SSYTDLP
 
-## Preview first, download later
+## Add links first, download later
 
 1. Copy a video, playlist or supported music-service link into the link field.
-2. Click **Preview / Add**, or press Enter. This fetches information only.
-3. Check the items you want. Click a checkbox, double-click a row, or select
-   rows and press Space. Use **Select all**, **Select none** or **Invert**.
-4. Click **Add to queue**. Add another link in the same way.
+2. Click **Quick add**, or press Enter. This saves the link without a network request. Use **Add multiple links** to paste a multiline list.
+3. Open **Queue → Fetch queued links** to load the collected sources together. Available entries start selected. No per-link preview dialog opens.
+4. Use **Edit selection** to choose entries. Click a checkbox, double-click a row, or select rows and press Space. Use **Select all**, **Select none** or **Invert**. **Preview / Add** is also available for optional single-link preview.
 5. Pick a preset and choose **Save to** → **Browse** for the destination.
 6. Set the optional checkboxes, then click **Download queue**.
 
@@ -26,6 +25,7 @@ Enable **Embed metadata**, **Embed cover / thumbnail**, and **Sort by Artist / A
 as needed. Missing artist falls back to uploader; missing album falls back to
 playlist title or `Singles`. When album artwork is absent, the source thumbnail
 is used. Public catalog imports supply their available artist/album fields.
+Repeated artist names are removed from credits. Organized folders use album artist or the primary artist, while distinct collaborators remain in tags. Existing media is not moved. See the [folder and queue guide](QUEUE-AND-METADATA.md).
 
 ## Lyrics and subtitles
 
@@ -51,7 +51,7 @@ provider; the log identifies the actual audio source. Apple Music playlists are
 not supported. A public Spotify embed may contain only part of its playlist.
 
 Lyrics lookups send title/artist/duration to LRCLIB; matching sends a search to
-YouTube. The app does not collect account credentials. Details: [personal-use
+YouTube. Optional **Settings → Cookies** can pass a browser session or an imported cookie file to the nightly engine. Imports last only for this session; see the [cookie guide](COOKIES.md). Details: [personal-use
 and privacy notice](../DISCLAIMER.md).
 
 ## Queue, retry and appearance

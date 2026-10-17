@@ -47,7 +47,7 @@ class SelectionDialog(QDialog):
         self.tree.setRowCount(len(source.entries))
         for row,entry in enumerate(source.entries):
             box=QWidget();box_layout=QHBoxLayout(box);box_layout.setContentsMargins(9,0,0,0)
-            check=Check('',app,entry.index in self.selected);check.setFixedWidth(27);check.setEnabled(entry.available)
+            check=Check('',app,entry.index in self.selected);check.setFixedWidth(31);check.setEnabled(entry.available)
             check.toggled.connect(lambda checked,index=entry.index:self.set_selected(index,checked))
             box_layout.addWidget(check);self.checks[entry.index]=check
             self.tree.setCellWidget(row,0,box)

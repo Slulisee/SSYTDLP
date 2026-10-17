@@ -18,7 +18,7 @@ class EntryModel(QAbstractTableModel):
 
     def refresh(self):
         self.selections={record.id:set(record.selected) for record in self.app.records}
-        rows=[(record,entry) for record in self.app.records for entry in record.source.entries]
+        rows=[(record,entry) for record in self.app.records for entry in (record.source.entries or [None])]
         structure=tuple((record.id,id(entry)) for record,entry in rows)
         if structure!=self.structure:
             self.beginResetModel();self.rows=rows;self.structure=structure;self.endResetModel()
@@ -35,6 +35,13 @@ class EntryModel(QAbstractTableModel):
     def data(self,index,role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid():return None
         record,entry=self.rows[index.row()];col=index.column()
+        if entry is None:
+            if role==Qt.ItemDataRole.DisplayRole:
+                return ('','','',record.source.url,self.app.t('pending'),'','',self.app.t(record.status))[col]
+            if role==Qt.ItemDataRole.UserRole:return record.id
+            if role==Qt.ItemDataRole.ToolTipRole:return record.source.url
+            if role==Qt.ItemDataRole.ForegroundRole:return QColor(self.app.colors['muted'])
+            return None
         selected=entry.index in self.selections[record.id]
         if role==Qt.ItemDataRole.CheckStateRole and col==0:
             return Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked
@@ -60,7 +67,7 @@ class EntryFilter(QSortFilterProxyModel):
 
     def filterAcceptsRow(self,row,parent):
         record,entry=self.sourceModel().rows[row]
-        return (not self.source_id or record.id==self.source_id) and (not self.query or self.query in ' '.join((entry.title,entry.channel,entry.album,record.source.title)).casefold())
+        return (not self.source_id or record.id==self.source_id) and (not self.query or self.query in ' '.join((entry.title,entry.channel,entry.album,record.source.title) if entry else (record.source.url,record.source.title)).casefold())
 
     def update_filter(self,source_id,query):
         self.beginFilterChange();self.source_id=source_id or '';self.query=query.strip().casefold();self.endFilterChange()
@@ -78,7 +85,12 @@ class QueuePage(QWidget):
         self.search.setAccessibleName(app.t('queue_search'));filters.addWidget(self.sources,1);filters.addWidget(self.search,2);card.body.addLayout(filters)
         actions=QHBoxLayout();self.count=text_label('','muted');actions.addWidget(self.count,1)
         self.edit=app.make_button('edit','edit',self.edit_current);self.options=app.make_button('queue_options','settings',lambda:app.navigate('downloader'))
-        actions.addWidget(self.edit);card.body.addLayout(actions)
+        self.remove=app.make_button('remove','trash',self.remove_current)
+        actions.addWidget(self.edit);actions.addWidget(self.remove);card.body.addLayout(actions)
+        staged=QHBoxLayout()
+        self.add=app.make_button('bulk_links','plus',app.bulk_add)
+        self.fetch=app.make_button('fetch_links','refresh',lambda:app.resolve_links(),primary=True)
+        staged.addWidget(self.add);staged.addStretch();staged.addWidget(self.fetch);card.body.addLayout(staged)
         self.model=EntryModel(app);self.proxy=EntryFilter(self);self.proxy.setSourceModel(self.model)
         self.table=QTableView();self.table.setModel(self.proxy);self.table.setIconSize(QSize(82,46))
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -127,7 +139,15 @@ class QueuePage(QWidget):
         if index.isValid():return self.proxy.data(index,Qt.ItemDataRole.UserRole)
 
     def selection_changed(self,*_):
-        self.edit.setEnabled(self.app.operation=='idle' and bool(self.current_record()))
+        record=next((r for r in self.app.records if r.id==self.current_record()),None)
+        self.edit.setEnabled(self.app.operation=='idle' and record is not None and record.source.kind!='pending')
+        self.remove.setEnabled(self.app.operation=='idle' and record is not None)
+
+    def remove_current(self):
+        if self.app.operation=='idle':
+            record_id=self.current_record()
+            self.app.records=[r for r in self.app.records if r.id!=record_id]
+            self.app.refresh_queue();self.app.persist()
 
     def edit_current(self):
         record_id=self.current_record()
@@ -135,6 +155,7 @@ class QueuePage(QWidget):
 
     def sync_state(self):
         idle=self.app.operation=='idle';self.selection_changed()
+        self.add.setEnabled(idle);self.fetch.setEnabled(idle and any(r.source.kind=='pending' for r in self.app.records))
         self.download.setEnabled(idle and any(r.status!='completed' for r in self.app.records))
         self.cancel.setEnabled(self.app.cancel_button.isEnabled())
         self.current.setText(self.app.current_text);self.current.setVisible(not self.app.current.isHidden())

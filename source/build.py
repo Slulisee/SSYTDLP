@@ -25,6 +25,7 @@ def main():
         env['PATH'] = os.pathsep.join(str(path) for path in paths if path.is_dir())
     subprocess.run(args, check=True, env=env)
     target = destination / 'SSYTDLP.app/Contents/MacOS' if sys.platform == 'darwin' else destination / 'SSYTDLP'
+    shutil.copytree(root / 'source/plugin_bundle', target / 'plugin_bundle', dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
     shutil.copytree(root / 'tools', target / 'tools', dirs_exist_ok=True)
     shutil.copytree(root / 'licenses', target / 'licenses', dirs_exist_ok=True)
     for name in ('README.md', 'CROSS-PLATFORM.md', 'DISCLAIMER.md', 'LICENSE', 'LICENSE.txt', 'THIRD_PARTY.md', 'APPEARANCE.md', 'CHANGELOG.md', 'SSMP-INTEGRATION.md'):

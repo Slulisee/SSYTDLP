@@ -10,6 +10,7 @@ import shutil
 import unicodedata
 
 from syncedlyrics.providers.lrclib import Lrclib
+from plugin_bundle.ssytdlp.yt_dlp_plugins.postprocessor._ssy_metadata import artists
 
 
 def normalized(text):
@@ -18,6 +19,8 @@ def normalized(text):
 
 def clean_title(text):
     text = re.sub(r'\s*[\[(](?:official[^\])]*|lyrics?[^\])]*|[48]k[^\])]*|hd|hq|audio|visuali[sz]er)[\])]', '', str(text), flags=re.I)
+    text = re.sub(r'\s*[\[(](?:feat\.?|ft\.?|featuring)\s+[^\])]+[\])]', '', text, flags=re.I)
+    text = re.split(r'\s+(?:feat\.?|ft\.?|featuring)\s+', text, maxsplit=1, flags=re.I)[0]
     return text.strip()
 
 
@@ -26,18 +29,19 @@ def identity(info):
     artist = info.get('artist') or ''
     if title in ('NA', 'None'):
         title = info.get('title') or ''
-    if ' - ' in title and (not artist or normalized(artist) in ('unknown artist', 'na') or normalized(artist) == normalized(info.get('uploader'))):
-        artist, title = title.split(' - ', 1)
+    parts = re.split(r'\s+[-–—]\s+', title, maxsplit=1)
+    if len(parts) == 2 and (not artist or normalized(artist) in ('unknown artist', 'na') or normalized(artist) == normalized(info.get('uploader')) or normalized(parts[0]) == normalized((artists(artist) or [''])[0])):
+        artist, title = parts
     artist = re.sub(r'(?:\s*-\s*Topic|VEVO)$', '', str(artist), flags=re.I).strip()
-    return clean_title(title), artist
+    return clean_title(title), ', '.join(artists(artist))
 
 
 def valid_lyrics(plain, synced):
     plain = str(plain or '').strip()
     synced = str(synced or '').strip()
-    plain_ok = len(plain) >= 80 and len(plain.splitlines()) >= 4
+    plain_ok = len(plain) >= 24 and len([line for line in plain.splitlines() if line.strip()]) >= 2
     timed = re.findall(r'\[(\d{1,3}):(\d{2})(?:[.:]\d+)?\]', synced)
-    synced_ok = len(synced) >= 100 and len(timed) >= 4 and any(int(m) * 60 + int(s) >= 10 for m, s in timed)
+    synced_ok = len(synced) >= 40 and len(timed) >= 2 and any(int(m) * 60 + int(s) >= 10 for m, s in timed)
     return plain if plain_ok else '', synced if synced_ok else ''
 
 
@@ -63,41 +67,38 @@ class LyricsFinder:
             return None
         duration = info.get('duration')
         duration = duration if isinstance(duration, (int, float)) and duration > 0 else None
+        primary = artists(artist)[0]
         params = {'track_name': title, 'artist_name': artist}
         if duration:
             params['duration'] = duration
-        candidates = []
-        try:
-            response = self.provider.session.get('https://lrclib.net/api/get', params=params)
-            if response.ok and isinstance(response.json(), dict):
-                candidates.append(response.json())
-        except Exception:
-            # The signature endpoint may fail for music videos whose duration
-            # includes an intro. Search still validates duration before accepting.
-            pass
-        if cancelled is not None and cancelled.is_set():
-            return None
-        # A short/incorrect community record must not block better search results.
-        good = [item for item in candidates if self.accept(item, title, artist, duration)]
-        if not good:
-            response = self.provider.session.get('https://lrclib.net/api/search', params={'track_name': title, 'artist_name': artist})
-            response.raise_for_status()
-            data = response.json()
-            candidates = data if isinstance(data, list) else []
-            good = [item for item in candidates if self.accept(item, title, artist, duration)]
+        if info.get('album'):
+            params['album_name'] = info['album']
+        queries = [('get', params), ('search', {'track_name': title, 'artist_name': artist})]
+        if primary != artist:
+            queries.append(('search', {'track_name': title, 'artist_name': primary}))
+        queries.append(('search', {'q': primary + ' ' + title}))
+        good = []
+        for endpoint, query in queries:
+            if cancelled is not None and cancelled.is_set():
+                return None
+            try:
+                response = self.provider.session.get('https://lrclib.net/api/' + endpoint, params=query, timeout=(5, 12))
+                response.raise_for_status()
+                data = response.json()
+                candidates = [data] if isinstance(data, dict) else data if isinstance(data, list) else []
+                good = [item for item in candidates if self.accept(item, title, artist, duration)]
+                if good:
+                    break
+            except Exception:
+                # A missing exact signature or provider outage must not block
+                # independent search fallbacks or fail an otherwise valid file.
+                continue
         if not good:
             return None
         best = min(good, key=lambda item: (0 if item.get('syncedLyrics') else 1, abs(float(item.get('duration') or 0) - (duration or 0))))
         if cancelled is not None and cancelled.is_set():
             return None
-        # Integrate syncedlyrics' LRCLIB adapter for the selected, validated record.
-        try:
-            result = self.provider.get_lrc_by_id(str(best['id']))
-        except Exception:
-            result = None
-        # The signature/search response already contains validated lyrics. Keep
-        # them when the community adapter's optional by-ID endpoint is unavailable.
-        plain, synced = valid_lyrics(result.unsynced if result else best.get('plainLyrics'), result.synced if result else best.get('syncedLyrics'))
+        plain, synced = valid_lyrics(best.get('plainLyrics'), best.get('syncedLyrics'))
         if not plain and synced:
             plain = re.sub(r'\[[^\]]+\]', '', synced).strip()
         return LyricsResult(int(best['id']), plain, synced, f'https://lrclib.net/api/get/{best["id"]}') if plain or synced else None
@@ -106,13 +107,25 @@ class LyricsFinder:
     def accept(item, title, artist, duration):
         if not isinstance(item, dict) or item.get('instrumental'):
             return False
-        if SequenceMatcher(None, normalized(title), normalized(item.get('trackName'))).ratio() < .90:
+        if SequenceMatcher(None, normalized(title), normalized(clean_title(item.get('trackName') or ''))).ratio() < .90:
             return False
-        if SequenceMatcher(None, normalized(artist), normalized(item.get('artistName'))).ratio() < .85:
+        wanted = artists(artist)
+        found = artists(item.get('artistName'))
+        if not wanted or not found or SequenceMatcher(None, normalized(wanted[0]), normalized(found[0])).ratio() < .90:
+            return False
+        # Keep remixes, live takes and tempo edits from matching the original.
+        versions = lambda value: set(re.findall(r'\b(?:live|remix|slowed|sped|acoustic|instrumental|nightcore)\b', normalized(value)))
+        if versions(title) != versions(item.get('trackName')):
             return False
         if duration and (not isinstance(item.get('duration'), (int, float)) or abs(item['duration'] - duration) > max(8, duration * .04)):
             return False
-        return any(valid_lyrics(item.get('plainLyrics'), item.get('syncedLyrics')))
+        plain, synced = valid_lyrics(item.get('plainLyrics'), item.get('syncedLyrics'))
+        if plain and len(plain) < 80 and not synced:
+            # Short indie songs are useful records too, but demand an exact
+            # title/primary artist and a matching known runtime.
+            if not duration or normalized(title) != normalized(clean_title(item.get('trackName') or '')) or normalized(wanted[0]) != normalized(found[0]):
+                return False
+        return bool(plain or synced)
 
 
 def write_new(path, text):

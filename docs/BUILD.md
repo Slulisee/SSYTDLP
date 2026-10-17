@@ -31,13 +31,14 @@ Using the environment's Python:
 
 ```sh
 python -m unittest discover -s source -p 'test_*.py' -v
+python source/verify_update_native.py
 python source/build.py
 python source/package_native.py
 ```
 
 Output: Windows `dist/SSYTDLP/SSYTDLP.exe`, macOS `dist/SSYTDLP.app`, or Linux
 `dist/SSYTDLP/SSYTDLP`. Archives and SHA256 files go into `native-artifacts/`.
-Keep packaged `_internal` and `tools` with the program. macOS/Linux use externally installed FFmpeg.
+Keep packaged `_internal`, `tools` and `plugin_bundle` with the program. The bundled SSYTDLP metadata processor runs before filenames and embedded tags are written. macOS/Linux use externally installed FFmpeg.
 Windows provisioning downloads and checksum-verifies the Gyan essentials FFmpeg build.
 
 `prepare_tools.py` provisions official nightly and Deno; `prepare_release.py`

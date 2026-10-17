@@ -19,7 +19,10 @@ from engine import (APP_NAME, APP_FULL_NAME, PRESETS, Options, Preview, build_ar
                     load_settings, save_settings, update_nightly, validate_url)
 from i18n import LANGUAGES, tr
 from platform_support import config_directory, open_folder
-from queue_model import Batch, QueueRecord, QueueStore, normalize_preview
+from queue_model import Batch, ResolveBatch, QueueRecord, QueueStore, normalize_preview, stage_links
+from cookie_support import BROWSERS, CookieSource, redact
+from cookie_page import CookieCard
+from link_dialog import BulkDialog
 from qt_dialogs import SelectionDialog
 from thumbnails import ThumbnailCache, ThumbnailCell
 from queue_page import QueuePage
@@ -53,6 +56,8 @@ class App(QMainWindow):
         if settings_path is None and not self.settings_path.exists():
             settings=load_settings(config_directory().parent/'yt-dlp Simple/settings.json')
         self.saved_settings=settings.copy()
+        self.cookies=CookieSource('browser',settings.get('cookie_browser','firefox')) if settings.get('cookie_mode')=='browser' and settings.get('cookie_browser') in BROWSERS else CookieSource()
+        self.resolver=None;self.resolve_then_download=False
         self.language=settings.get('language','en')
         if self.language not in LANGUAGES:self.language='en'
         self.theme,self.theme_colors=appearance_settings(settings)
@@ -84,7 +89,6 @@ class App(QMainWindow):
         self.build_queue_card(main)
         self.build_options_card(main,settings)
         self.build_destination_card(main,settings)
-        main.addStretch(1)
         self.downloader_scroll=scroll_page(self.downloader_content);self.pages.addWidget(self.downloader_scroll)
         self.activity_content=QWidget();activity_layout=QVBoxLayout(self.activity_content);activity_layout.setContentsMargins(24,24,24,24)
         activity=Card(self);activity.body.addWidget(self.label('nav_history','heading'))
@@ -98,7 +102,7 @@ class App(QMainWindow):
         self.apply_appearance(persist=False)
         self.refresh_queue();self.preset_changed();self.set_status('ready');self.set_operation('idle')
         self.poll_timer=QTimer(self);self.poll_timer.timeout.connect(self.poll);self.poll_timer.start(65)
-        self.url_entry.returnPressed.connect(self.preview_link)
+        self.url_entry.returnPressed.connect(self.quick_add)
         QShortcut(QKeySequence('Ctrl+L'),self,activated=lambda:(self.navigate('downloader'),self.url_entry.setFocus(),self.url_entry.selectAll()))
         QShortcut(QKeySequence('Ctrl+,'),self,activated=lambda:self.navigate('settings'))
         delete_shortcut=QShortcut(QKeySequence(Qt.Key.Key_Delete),self.tree,activated=self.remove_selected)
@@ -157,9 +161,12 @@ class App(QMainWindow):
         self.url_entry=QLineEdit();self.url_entry.setPlaceholderText('https://www.youtube.com/watch?v=…')
         self.url_entry.setClearButtonEnabled(True);self.url_entry.setAccessibleName(self.t('link'))
         self.paste_button=self.make_button('paste','paste',self.paste)
-        self.add_button=self.make_button('preview_add','plus',self.preview_link,primary=True)
-        self.link_card.body.addLayout(row(self.url_entry,self.paste_button,self.add_button))
-        self.editable.extend((self.url_entry,self.paste_button,self.add_button));main.addWidget(self.link_card)
+        self.add_button=self.make_button('preview_add','image',self.preview_link)
+        self.quick_button=self.make_button('quick_add','plus',self.quick_add,primary=True)
+        self.bulk_button=self.make_button('bulk_links','queue',self.bulk_add)
+        self.link_card.body.addLayout(row(self.url_entry,self.paste_button,self.quick_button))
+        extras=QHBoxLayout();extras.addWidget(self.bulk_button);extras.addStretch();extras.addWidget(self.add_button);self.link_card.body.addLayout(extras)
+        self.editable.extend((self.url_entry,self.paste_button,self.add_button,self.quick_button,self.bulk_button));main.addWidget(self.link_card)
 
     def build_queue_card(self,main):
         self.queue_card=Card(self);header=self.queue_header=QHBoxLayout();header.setSpacing(13);header.addWidget(self.symbol('queue',29))
@@ -172,7 +179,7 @@ class App(QMainWindow):
         for column,button in enumerate((self.edit_button,self.remove_button,self.clear_button)):actions.addWidget(button,0,column)
         header.addWidget(self.queue_actions)
         self.queue_card.body.addLayout(header)
-        self.tree=QTableWidget(0,6);self.tree.setFixedHeight(226)
+        self.tree=QTableWidget(0,6);self.tree.setMinimumHeight(190);self.tree.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
         self.tree.setHorizontalHeaderLabels(['','#',self.t('thumbnail'),self.t('title'),self.t('selected'),self.t('status')])
         self.tree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tree.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -190,8 +197,8 @@ class App(QMainWindow):
         self.empty_icon=QLabel();self.empty_icon.setProperty('role','empty-icon');self.empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter);self.empty_icon.setFixedSize(66,66);empty.addWidget(self.empty_icon,0,Qt.AlignmentFlag.AlignHCenter)
         self.empty_title=self.label('empty_queue','empty-title');self.empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter);empty.addWidget(self.empty_title)
         empty_hint=self.label('empty_queue_hint','muted');empty_hint.setAlignment(Qt.AlignmentFlag.AlignCenter);empty.addWidget(empty_hint);empty.addStretch()
-        table_layout.addWidget(self.empty_overlay);self.queue_card.body.addWidget(self.table_container)
-        self.editable.extend((self.edit_button,self.remove_button,self.clear_button));main.addWidget(self.queue_card)
+        table_layout.addWidget(self.empty_overlay);self.queue_card.body.addWidget(self.table_container,1)
+        self.editable.extend((self.edit_button,self.remove_button,self.clear_button));main.addWidget(self.queue_card,1)
 
     def build_options_card(self,main,settings):
         self.options_card=Card(self);self.heading(self.options_card.body,'options','settings','options_hint')
@@ -200,12 +207,12 @@ class App(QMainWindow):
         self.preset_box.setCurrentIndex(list(PRESETS).index(self.preset))
         self.preset_box.currentIndexChanged.connect(self.preset_changed)
         self.options_card.body.addWidget(self.preset_box)
-        self.hint=text_label('','hint',True);self.options_card.body.addWidget(self.hint)
+        self.hint=text_label('','hint',True);hint_row=QHBoxLayout();hint_row.addWidget(self.symbol('info',14));hint_row.addWidget(self.hint,1);self.options_card.body.addLayout(hint_row)
         self.checks_grid=QGridLayout();self.checks_grid.setHorizontalSpacing(20);self.checks_grid.setVerticalSpacing(3)
         self.checks=[];self.check_rows=[]
         for name,key,default,symbol in [('metadata','metadata',True,'music'),('cover','cover',True,'image'),('organize','organize',True,'folder'),('skip_existing','skip',True,'skip'),('lyrics','lyrics',False,'tag'),('subtitles','subtitles',False,'subtitles')]:
             line=QWidget();line_layout=QHBoxLayout(line);line_layout.setContentsMargins(0,0,0,0);line_layout.setSpacing(10)
-            check=Check('',self,bool(settings.get(name,default)));check.setFixedWidth(27);check.setAccessibleName(self.t(key))
+            check=Check('',self,bool(settings.get(name,default)));check.setFixedWidth(31);check.setAccessibleName(self.t(key))
             line_layout.addWidget(check);line_layout.addWidget(self.symbol(symbol,17))
             label=self.label(key,'',True);label.setSizePolicy(QSizePolicy.Policy.Ignored,QSizePolicy.Policy.Preferred)
             label.setMinimumHeight(25);line_layout.addWidget(label,1)
@@ -343,7 +350,7 @@ class App(QMainWindow):
         self.preset=list(PRESETS)[max(0,self.preset_box.currentIndex())]
         kind,_,ext=PRESETS[self.preset]
         self.preset_box.leading='image' if kind=='video' else 'music';self.preset_box.update()
-        self.hint.setText('ⓘ   '+self.t('hint_video' if kind=='video' else 'hint_flac' if ext=='flac' else 'hint_audio'))
+        self.hint.setText(self.t('hint_video' if kind=='video' else 'hint_flac' if ext=='flac' else 'hint_audio'))
 
     def options_changed(self,*_):
         if hasattr(self,'folder_entry'):self.persist()
@@ -353,11 +360,12 @@ class App(QMainWindow):
             self.metadata.isChecked(),self.cover.isChecked(),self.organize.isChecked(),self.skip_existing.isChecked(),
             lyrics=self.lyrics.isChecked(),embed_lyrics=self.embed_lyrics,subtitles=self.subtitles.isChecked(),
             subtitle_languages=self.subtitle_languages,automatic_subtitles=self.automatic_subtitles,
-            embed_subtitles=self.embed_subtitles,ssmp_enabled=self.ssmp_enabled,ssmp_inbox=self.ssmp_inbox)
+            embed_subtitles=self.embed_subtitles,ssmp_enabled=self.ssmp_enabled,ssmp_inbox=self.ssmp_inbox,cookies=self.cookies)
 
     def persist(self):
         values=self.saved_settings.copy();values.update(self.get_options().__dict__)
-        for key in ('url','playlist','playlist_items','catalog_title','catalog_artist','catalog_album','catalog_number'):values.pop(key,None)
+        for key in ('cookies','url','playlist','playlist_items','catalog_title','catalog_artist','catalog_album','catalog_number'):values.pop(key,None)
+        values.update(cookie_mode='browser' if self.cookies.mode=='browser' else 'none',cookie_browser=self.cookies.browser)
         values.update(language=self.language,theme=self.theme,theme_colors=self.theme_colors,wallpaper=self.wallpaper_path)
         try:
             save_settings(self.settings_path,values);self.store.save(self.records);self.saved_settings=values
@@ -402,7 +410,8 @@ class App(QMainWindow):
         self.operation=operation
         for widget in self.editable:widget.setEnabled(operation=='idle')
         self.settings_page.media_container.setEnabled(operation=='idle')
-        self.cancel_button.setEnabled(operation in ('preview','download'))
+        self.settings_page.cookie_card.setEnabled(operation=='idle')
+        self.cancel_button.setEnabled(operation in ('preview','download','resolve'))
         self.progress.setVisible(operation!='idle')
         self.selection_state()
         self.queue_page.sync_state()
@@ -425,12 +434,35 @@ class App(QMainWindow):
         try:open_folder(Path(self.folder_entry.text()).expanduser().absolute())
         except OSError as exc:QMessageBox.warning(self,self.t('open_folder'),str(exc))
 
+    def accept_staged(self,records):
+        self.records.extend(records);self.refresh_queue();self.persist()
+        self.set_status('staged',count=len(records))
+
+    def quick_add(self):
+        if self.operation!='idle':return
+        try:records=stage_links(self.url_entry.text(),self.records)
+        except ValueError:self.set_status('invalid_link');return
+        self.accept_staged(records);self.url_entry.clear();self.url_entry.setFocus()
+
+    def bulk_add(self):
+        if self.operation=='idle':
+            self.bulk_dialog=BulkDialog(self);self.bulk_dialog.show()
+
+    def resolve_links(self,download_after=False):
+        if self.operation!='idle':return
+        pending=[r for r in self.records if r.source.kind=='pending']
+        if not pending:return
+        self.resolve_then_download=download_after
+        self.navigate('queue');self.set_operation('resolve');self.set_status('fetching');self.progress.setRange(0,0)
+        self.resolver=ResolveBatch(self.tools,lambda kind,value:self.events.put((kind,value)),self.cookies)
+        threading.Thread(target=self.resolver.run,args=(pending,),daemon=True).start()
+
     def preview_link(self):
         if self.operation!='idle':return
         try:url=validate_url(self.url_entry.text())
         except ValueError:self.set_status('invalid_link');return
         self.set_operation('preview');self.set_status('preview_loading');self.progress.setRange(0,0)
-        job=self.preview_job=Preview(self.tools,lambda *_:None)
+        job=self.preview_job=Preview(self.tools,lambda *_:None,self.cookies)
         def fetch():
             try:self.events.put(('preview_ok',normalize_preview(url,job.fetch(url))))
             except Exception as exc:self.events.put(('preview_error',str(exc)))
@@ -454,7 +486,9 @@ class App(QMainWindow):
     def edit_record(self,record_id):
         if self.operation=='idle':
             record=next((r for r in self.records if r.id==record_id),None)
-            if record:self.show_selection(record.source,record)
+            if record:
+                if record.source.kind=='pending':self.resolve_links()
+                else:self.show_selection(record.source,record)
 
     def remove_selected(self):
         if self.operation=='idle':
@@ -467,6 +501,8 @@ class App(QMainWindow):
         if self.operation!='idle':return
         pending=[r for r in self.records if r.status!='completed']
         if not pending:self.set_status('nothing');return
+        if any(r.source.kind=='pending' for r in pending):
+            self.resolve_links(download_after=True);return
         defaults=self.get_options()
         try:
             for record in pending:build_args(record.options(defaults),self.tools)
@@ -476,7 +512,7 @@ class App(QMainWindow):
         threading.Thread(target=self.batch.run,args=(pending,defaults),daemon=True).start()
 
     def cancel(self):
-        job=self.batch if self.operation=='download' else self.preview_job
+        job=self.batch if self.operation=='download' else self.resolver if self.operation=='resolve' else self.preview_job
         if job is not None:
             self.set_status('cancelling');self.cancel_button.setEnabled(False)
             threading.Thread(target=job.cancel,daemon=True).start()
@@ -487,7 +523,7 @@ class App(QMainWindow):
             threading.Thread(target=update_nightly,args=(self.tools,lambda kind,value:self.events.put((kind,value))),daemon=True).start()
 
     def append_log(self,value):
-        self.logs=(self.logs+[str(value)])[-350:]
+        self.logs=(self.logs+[redact(value)])[-350:]
         self.log.setPlainText('\n'.join(self.logs));self.log.verticalScrollBar().setValue(self.log.verticalScrollBar().maximum())
 
     def poll(self):
@@ -511,6 +547,19 @@ class App(QMainWindow):
                     for record in self.records:
                         if record.id==value['id']:record.status=value['status']
                     self.refresh_queue();self.persist()
+                elif kind=='resolved':
+                    record=next((r for r in self.records if r.id==value['id']),None)
+                    if record:
+                        record.source=value['source'];record.selected=[e.index for e in record.source.entries if e.available];record.status='queued'
+                    self.refresh_queue();self.persist()
+                elif kind=='resolve_done':
+                    for record in self.records:
+                        if record.status=='fetching':record.status='pending'
+                    self.resolver=None;self.set_operation('idle');self.progress.setRange(0,100);self.refresh_queue();self.persist()
+                    self.set_status('resolve_stopped' if value['cancelled'] else 'resolve_done',**value)
+                    if self.resolve_then_download and not value['cancelled'] and not value['errors'] and not self.close_pending:
+                        self.resolve_then_download=False;self.start()
+                    else:self.resolve_then_download=False
                 elif kind=='batch_done':
                     self.progress.setRange(0,100);self.progress.setValue(0 if value['cancelled'] else 100)
                     self.batch=None;self.set_operation('idle');self.current.hide()
@@ -551,7 +600,6 @@ class App(QMainWindow):
             for index,line in enumerate(self.check_rows):
                 self.checks_grid.removeWidget(line);self.checks_grid.addWidget(line,index if compact else index//2,0 if compact else index%2)
             self.checks_grid.setColumnStretch(1,0 if compact else 1);self.checks_grid.setColumnStretch(0,1)
-        self.tree.setFixedHeight(183 if self.height()<900 else 226)
         self.tree.setColumnHidden(2,compact)
 
     def closeEvent(self,event):
@@ -574,12 +622,12 @@ class SettingsPage(QScrollArea):
         language_row=QHBoxLayout();language_row.addWidget(app.label('language','heading'));language_row.addStretch();language_row.addWidget(self.language)
         intro.body.addLayout(language_row);layout.addWidget(intro)
         self.language.currentIndexChanged.connect(self.change_language)
-        self.tabs={};tabs=QHBoxLayout();tabs.setSpacing(8)
-        for section,key in [('appearance','appearance'),('media','media'),('ssmp','SSMP'),('services','services')]:
+        self.tabs={};tabs=self.tabs_layout=QGridLayout();tabs.setSpacing(8)
+        for index,(section,key) in enumerate([('appearance','appearance'),('media','media'),('cookies','cookies_tab'),('ssmp','SSMP'),('services','services')]):
             button=QPushButton('SSMP') if section=='ssmp' else app.make_button(key,role='tab')
             button.setProperty('role','tab');button.setCheckable(True);button.setCursor(Qt.CursorShape.PointingHandCursor)
-            button.clicked.connect(lambda checked=False,s=section:self.select_section(s));tabs.addWidget(button);self.tabs[section]=button
-        tabs.addStretch();layout.addLayout(tabs)
+            button.clicked.connect(lambda checked=False,s=section:self.select_section(s));tabs.addWidget(button,index//3,index%3);self.tabs[section]=button
+        layout.addLayout(tabs)
         gallery_card=Card(app);gallery_card.body.addWidget(app.label('theme_gallery','heading'))
         self.gallery=QWidget();self.gallery.installEventFilter(self);self.gallery_layout=QGridLayout(self.gallery);self.gallery_layout.setContentsMargins(0,0,0,0);self.gallery_layout.setSpacing(12)
         self.tiles={}
@@ -617,7 +665,8 @@ class SettingsPage(QScrollArea):
         save_row=QHBoxLayout();save_row.addStretch();self.apply_button=app.make_button('apply','check',self.apply_media,primary=True);save_row.addWidget(self.apply_button);media_layout.addLayout(save_row)
         layout.addWidget(self.media_container)
         services=Card(app);services.body.addWidget(app.label('services','heading'));services.body.addWidget(app.label('service_help','',True));services.body.addWidget(app.label('disclaimer','muted',True));layout.addWidget(services);layout.addStretch()
-        self.sections={'appearance':[gallery_card,colors,wallpaper],'media':[media],'ssmp':[integration],'services':[services]}
+        self.cookie_card=CookieCard(app);layout.insertWidget(layout.count()-1,self.cookie_card)
+        self.sections={'cookies':[self.cookie_card],'appearance':[gallery_card,colors,wallpaper],'media':[media],'ssmp':[integration],'services':[services]}
         self.current_section='appearance';self.select_section('appearance')
         self.gallery_columns=4
 
@@ -645,9 +694,15 @@ class SettingsPage(QScrollArea):
     def resizeEvent(self,event):
         super().resizeEvent(event)
         self.reflow_gallery()
+        if hasattr(self,'tabs'):
+            columns=5 if self.viewport().width()>950 else 3
+            for i,button in enumerate(self.tabs.values()):
+                self.tabs_layout.removeWidget(button);self.tabs_layout.addWidget(button,i//columns,i%columns)
 
     def sync_appearance(self):
         app=self.app
+        self.language.blockSignals(True);self.language.setCurrentIndex(list(LANGUAGES).index(app.language));self.language.blockSignals(False)
+        self.cookie_card.sync()
         for key,tile in self.tiles.items():tile.setChecked(key==app.theme);tile.update()
         self.theme_label.setText(app.t('theme_selected',theme=THEMES[app.theme].name))
         for key,(swatch,edit) in self.color_controls.items():
@@ -706,7 +761,17 @@ def main():
         def verify():
             from lyrics import LyricsFinder
             from services import catalog_provider
+            from engine import bundled_plugins, process_kwargs
+            from platform_support import tool_path
+            import subprocess
             app.navigate('queue');qt.processEvents()
+            fixture=Path(sys.argv[2]).with_suffix('.plugin.json')
+            fixture.write_text(json.dumps(dict(id='smoke',title='Generated smoke fixture',artist='Example Artist, Friend, Example Artist',album='Example Album',url='https://example.com/generated.wav',ext='wav',extractor='generic')),encoding='utf-8')
+            try:
+                result=subprocess.run([str(tool_path(app.tools,'yt-dlp')),'--ignore-config','--no-plugin-dirs','--plugin-dirs',str(bundled_plugins()),'--use-postprocessor','SSYTDLPMetadata:when=after_filter','--load-info-json',str(fixture),'--simulate','--print','video:%(artist)s|%(folder_artist)s'],capture_output=True,text=True,timeout=20,**process_kwargs())
+                metadata_plugin=result.returncode==0 and 'Example Artist, Friend|Example Artist' in result.stdout
+            except Exception:metadata_plugin=False
+            finally:fixture.unlink(missing_ok=True)
             values=dict(title=app.windowTitle(),presets=list(PRESETS),nightly=app.read_version().replace('\n',' '),mapped=app.isVisible(),
                 buttons=[app.download_button.text(),app.add_button.text(),app.nav['settings'].text()],languages=LANGUAGES,
                 theme=app.theme,themes=list(THEMES),watermark='made by Slulisee',extras=[app.t(k) for k in ('metadata','cover','organize','skip','lyrics','subtitles')],
@@ -715,6 +780,7 @@ def main():
                 queue_page=app.pages.currentWidget() is app.queue_page,
                 queue_model=type(app.queue_page.table.model().sourceModel()).__name__,
                 thumbnail_cache=type(app.thumbnails).__name__)
+            values.update(metadata_plugin=metadata_plugin,cookie_mode=app.cookies.mode,staged_links=stage_links('https://example.com/staged')[0].source.kind)
             Path(sys.argv[2]).write_text(json.dumps(values,indent=2),encoding='utf-8');app.close()
         QTimer.singleShot(1400,verify)
     return qt.exec()

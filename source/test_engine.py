@@ -56,7 +56,7 @@ class EngineTests(unittest.TestCase):
         args = build_args(Options('https://example.com/a', '.', playlist=True), Path('tools'))
         self.assertIn('--yes-playlist', args)
         template = args[args.index('--output') + 1]
-        self.assertIn('%(artist)', template)
+        self.assertIn('%(folder_artist)', template)
         self.assertIn('%(album)', template)
         self.assertIn('%(playlist_index)03d', template)
         self.assertIn('%(album,playlist_title|Singles)s:%(album)s', args)

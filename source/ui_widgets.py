@@ -132,19 +132,19 @@ class Check(QCheckBox):
     def __init__(self,text,app,checked=False):
         super().__init__(text);self.app=app;self.setChecked(checked)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setMinimumHeight(30)
+        self.setMinimumHeight(32)
 
     def paintEvent(self,event):
         p=QPainter(self);p.setRenderHint(QPainter.RenderHint.Antialiasing)
         c=self.app.colors
         p.setOpacity(1 if self.isEnabled() else .45)
-        box=QRectF(1,(self.height()-21)/2,21,21)
+        box=QRectF(3,(self.height()-21)/2,21,21)
         fill=QColor(c['accent'] if self.isChecked() else c['field'])
         p.setBrush(fill);p.setPen(QPen(QColor(c['accent'] if self.isChecked() else c['icon'] if self.underMouse() else c['control_border']),1.2))
         p.drawRoundedRect(box,5,5)
         if self.isChecked():
             p.setPen(QPen(QColor(c['on_accent']),2.2,Qt.PenStyle.SolidLine,Qt.PenCapStyle.RoundCap,Qt.PenJoinStyle.RoundJoin))
-            p.drawPolyline([QPointF(6,box.y()+11),QPointF(10,box.y()+15),QPointF(18,box.y()+6)])
+            p.drawPolyline([QPointF(box.x()+5,box.y()+11),QPointF(box.x()+9,box.y()+15),QPointF(box.x()+17,box.y()+6)])
         if self.hasFocus():
             p.setBrush(Qt.BrushStyle.NoBrush);p.setPen(QPen(QColor(c['glow']),1.2));p.drawRoundedRect(box.adjusted(-1,-1,1,1),6,6)
         p.setPen(QColor(c['text']));p.setFont(self.font())

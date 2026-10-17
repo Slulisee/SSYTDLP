@@ -1,12 +1,12 @@
 # Integration research and implementation
 
-Research and live checks: 16 October 2026.
+Research and live checks: 16–17 October 2026.
 
 | Project / API | Finding and use |
 | --- | --- |
 | [SongSync](https://github.com/Lambada10/SongSync) | Android reference for timed lyric files and embedded lyrics; credits syncedlyrics. Its Android UI/code was not copied. |
 | [syncedlyrics](https://github.com/moehmeni/syncedlyrics) | MIT Python project. SSYTDLP integrates its LRCLIB provider and HTTP session, with stricter identity/duration/content checks and fallback when the by-ID endpoint fails. Version 1.0.1 is pinned. |
-| [LRCLIB](https://github.com/tranxuanthang/lrclib), [API docs](https://lrclib.net/docs) | Public lyric records with plain and timed text. Live lookup, timed LRC, provenance and embedded lyrics were tested. Short/bad community records are rejected. |
+| [LRCLIB](https://github.com/tranxuanthang/lrclib), [API docs](https://lrclib.net/docs) | Public lyric records with plain and timed text. Live lookup, timed LRC, provenance and embedded lyrics were tested. Short songs require strong identity and duration agreement; bad/mismatched records are rejected. |
 | [Mutagen](https://github.com/quodlibet/mutagen) | Metadata editing without re-encoding audio. Tested lyric embedding while preserving artist tags in MP3, M4A, Opus, FLAC and MP4. Version 1.48.1 is pinned. |
 | [spotDL](https://github.com/spotDL/spotify-downloader) | Confirms the catalog-to-YouTube approach used by Spotify download tools. SSYTDLP implements public catalog imports and conservative YouTube matching in its existing queue instead of adding a separate spotDL application. |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp), [supported sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) | Existing nightly remains the downloader. Direct public SoundCloud media and YouTube media were tested. Subtitle flags produce SRT sidecars and optional embedded video streams. |
@@ -49,3 +49,9 @@ not implemented. The personal-use disclaimer does not change those boundaries.
 Licenses for bundled Python dependencies are included under `licenses/`.
 No SongSync or spotDL source code is incorporated; their workflows informed
 the implementation and are credited here.
+
+## Version 1.2 follow-up
+
+The improved matcher tries cleaned full credits, primary-artist searches and a combined LRCLIB query, using the API exposed by the existing syncedlyrics LRCLIB provider session. It reuses validated response text without a redundant by-ID request. Public Rebzyyx and Cavetown examples found timed records; see [1.2 verification](docs/VERIFICATION-v1.2.0.md).
+
+Cookie behavior follows the [official FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp) and [YouTube export guide](https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies). The app bundles its own metadata preprocessor using the [official plugin interface](https://github.com/yt-dlp/yt-dlp-sample-plugins). Its execution stage and flags were verified with the shipped nightly; default third-party plugin discovery remains disabled.

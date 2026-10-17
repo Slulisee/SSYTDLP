@@ -1,7 +1,8 @@
 """Small, shell-free yt-dlp nightly process layer. Python standard library only."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from contextlib import ExitStack
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 from urllib.parse import urlsplit
@@ -12,6 +13,9 @@ import os
 import re
 import subprocess
 import threading
+import sys
+
+from cookie_support import CookieSource, cookie_args, redact
 
 from platform_support import executable_name, nightly_asset, tool_args, tool_path
 
@@ -53,6 +57,7 @@ class Options:
     catalog_number: int = 0
     ssmp_enabled: bool = False
     ssmp_inbox: str = ''
+    cookies: CookieSource = field(default_factory=CookieSource, repr=False)
 
 
 def validate_url(value: str) -> str:
@@ -73,6 +78,10 @@ def validate_url(value: str) -> str:
 
 def process_kwargs() -> dict:
     return {'creationflags': subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == 'nt' else {'start_new_session': True}
+
+
+def bundled_plugins() -> Path:
+    return (Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent) / 'plugin_bundle'
 
 
 def build_args(options: Options, tools: Path) -> list[str]:
@@ -115,8 +124,10 @@ def build_args(options: Options, tools: Path) -> list[str]:
                 args += ['--replace-in-metadata', field, '(?s)^.*$', value.replace('\\', '\\\\')]
         if options.catalog_number:
             args += ['--parse-metadata', f'{int(options.catalog_number)}:%(track_number)s']
+    plugin = bundled_plugins()
+    args += ['--plugin-dirs', str(plugin), '--use-postprocessor', 'SSYTDLPMetadata:when=after_filter' + (';prefer_flat=1' if options.catalog_title else '')]
     if options.organize:
-        template = '%(artist).70B/%(album).70B/'
+        template = '%(folder_artist).70B/%(album).70B/'
     elif options.playlist:
         template = '%(playlist_title|Playlist).100B/'
     else:
@@ -141,7 +152,7 @@ def build_args(options: Options, tools: Path) -> list[str]:
     if options.cover:
         args += ['--embed-thumbnail', '--convert-thumbnails', 'jpg']
     if options.lyrics or options.ssmp_enabled:
-        fields = ('filepath', 'title', 'track', 'artist', 'album', 'duration', 'uploader')
+        fields = ('filepath', 'title', 'track', 'artist', 'album_artist', 'album', 'duration', 'uploader')
         args += ['--print', 'after_move:MEDIA:{' + ','.join('"' + field + '":%(' + field + '|null)j' for field in fields) + '}']
     if options.subtitles:
         if not re.fullmatch(r'[A-Za-z0-9_.*,\-]+', options.subtitle_languages):
@@ -163,8 +174,9 @@ def build_args(options: Options, tools: Path) -> list[str]:
 
 
 class Download:
-    def __init__(self, tools: Path, emit: Callable[[str, object], None]):
+    def __init__(self, tools: Path, emit: Callable[[str, object], None], cookies=None):
         self.tools = tools
+        self.cookies = cookies or CookieSource()
         self.emit = emit
         self.cancelled = threading.Event()
         self._process: subprocess.Popen | None = None
@@ -185,11 +197,15 @@ class Download:
                         pass
 
     def run(self, options: Options) -> None:
+        cookie_context = ExitStack()
         completed = 0
         ssmp_paths = []
         ssmp_metadata = {}
         try:
             args = build_args(options, self.tools)
+            args[-2:-2] = cookie_context.enter_context(cookie_args(options.cookies))
+            env = os.environ.copy()
+            env['SSYTDLP_MEDIA_ROOT'] = str(Path(options.folder).expanduser().absolute())
             for name in ('yt-dlp', 'ffmpeg', 'ffprobe'):
                 tool_path(self.tools, name)
             folder = Path(options.folder).expanduser().absolute()
@@ -203,7 +219,7 @@ class Download:
                 self._process = subprocess.Popen(
                     [str(tool_path(self.tools, 'yt-dlp')), *args], stdin=subprocess.DEVNULL,
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                    encoding='utf-8', errors='replace', **process_kwargs(),
+                    encoding='utf-8', errors='replace', env=env, **process_kwargs(),
                 )
                 process = self._process
             assert process.stdout is not None
@@ -233,7 +249,7 @@ class Download:
                         continue
                 except (ValueError, TypeError):
                     pass
-                self.emit('log', line)
+                self.emit('log', redact(line))
             process.stdout.close()
             code = process.wait()
             status = 'cancelled' if self.cancelled.is_set() else 'success' if code == 0 else 'error'
@@ -247,8 +263,13 @@ class Download:
                     self.emit('log', '[SSMP] Download completed, but library handoff failed: ' + str(exc))
             self.emit('done', {'status': status, 'files': completed, 'exit_code': code})
         except Exception as exc:
-            self.emit('log', str(exc))
+            self.emit('log', redact(exc))
             self.emit('done', {'status': 'cancelled' if self.cancelled.is_set() else 'error', 'files': completed})
+        finally:
+            if self._process is not None and self._process.poll() is None:
+                self.cancel()
+                self._process.wait()
+            cookie_context.close()
 
 
 def github_headers(url: str, user_agent='SSYTDLP/1.0') -> dict:
@@ -356,10 +377,14 @@ class Preview(Download):
         return self._extract('ytsearch5:' + artist + ' ' + title + ' official audio')
 
     def _extract(self, query):
+        with cookie_args(self.cookies) as auth:
+            return self._extract_authenticated(query, auth)
+
+    def _extract_authenticated(self, query, auth):
         args = [str(tool_path(self.tools, 'yt-dlp')), '--ignore-config', '--no-plugin-dirs',
                 '--flat-playlist', '--dump-single-json', '--skip-download', '--yes-playlist',
                 '--encoding', 'utf-8', '--no-color', '--socket-timeout', '25', '--retries', '1',
-                *tool_args(self.tools), '--', query]
+                *tool_args(self.tools), *auth, '--', query]
         with self._lock:
             if self.cancelled.is_set():
                 raise InterruptedError('Preview cancelled.')
@@ -371,11 +396,11 @@ class Preview(Download):
         if self.cancelled.is_set():
             raise InterruptedError('Preview cancelled.')
         if not output.strip():
-            raise ValueError(errors.strip()[-3000:] or 'The source did not return media information.')
+            raise ValueError(redact(errors.strip()[-3000:]) or 'The source did not return media information.')
         try:
             result = json.loads(output)
         except ValueError as exc:
-            raise ValueError(errors.strip()[-3000:] or 'Invalid media preview response.') from exc
+            raise ValueError(redact(errors.strip()[-3000:]) or 'Invalid media preview response.') from exc
         if not isinstance(result, dict):
-            raise ValueError('Invalid media preview response.')
+            raise ValueError(redact(errors.strip()[-3000:]) or 'Invalid media preview response.')
         return result

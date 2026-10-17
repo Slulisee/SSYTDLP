@@ -4,7 +4,7 @@ SSYTDLP is intended for personal use. Download only material you own or have
 permission to copy, and respect applicable law and the source service's terms.
 A private-use label does not itself grant copying rights or access to restricted
 content. SSYTDLP does not remove DRM, provide paid-service audio access or collect
-account passwords/tokens.
+account passwords. Optional cookie settings pass your selected browser session or a session-only imported file to the local nightly engine. See the [cookie guide](docs/COOKIES.md) for storage, export and clearing behavior.
 
 Spotify, Deezer and Apple Music links supply public catalog metadata. SSYTDLP
 searches YouTube for a matching recording and downloads that recording using
@@ -17,7 +17,7 @@ available formats supplied to yt-dlp. Public streams may be lower quality than
 an account-only original. Converting to FLAC or a higher MP3 bitrate cannot
 restore lost quality.
 
-Optional lyrics lookup sends track title, artist and duration to LRCLIB using
+Optional lyrics lookup sends track title, artist, album when available and duration to LRCLIB using
 the open-source syncedlyrics provider. LRCLIB is a community database: coverage,
 accuracy and timing vary. SSYTDLP checks identity, duration and content before
 saving a match; unsuccessful lyrics lookup retains the media file. The matching

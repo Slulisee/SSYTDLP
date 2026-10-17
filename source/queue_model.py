@@ -8,6 +8,9 @@ import os
 import shutil
 import threading
 import uuid
+from urllib.parse import urlsplit, parse_qs, urlencode, urlunsplit
+from cookie_support import redact
+from plugin_bundle.ssytdlp.yt_dlp_plugins.postprocessor._ssy_metadata import artists
 
 from engine import Download, Options, Preview, validate_url
 
@@ -52,7 +55,8 @@ def normalize_preview(url: str, info: dict) -> MediaSource:
         available = bool(raw) and raw.get('availability') not in ('private', 'needs_auth', 'premium_only', 'subscriber_only') and title.lower() not in ('[private video]', '[deleted video]') and raw.get('_type') != 'playlist'
         thumbnail = raw.get('thumbnail') or next((t.get('url') for t in reversed(raw.get('thumbnails') or []) if isinstance(t, dict) and t.get('url')), '')
         duration = raw.get('duration')
-        entries.append(MediaEntry(index, title, str(raw.get('artist') or raw.get('channel') or raw.get('uploader') or ''), duration if isinstance(duration, (int, float)) else None, str(thumbnail), available, str(raw.get('url') or ''), str(raw.get('artist') or ''), str(raw.get('album') or '')))
+        credit=', '.join(artists(raw.get('artists') or raw.get('artist')))
+        entries.append(MediaEntry(index, title, credit or str(raw.get('channel') or raw.get('uploader') or ''), duration if isinstance(duration, (int, float)) else None, str(thumbnail), available, str(raw.get('webpage_url') or raw.get('url') or ''), credit, str(raw.get('album') or '')))
     if not entries or not any(entry.available for entry in entries):
         raise ValueError('No available videos were found in this source.')
     return MediaSource(validate_url(url), str(info.get('title') or entries[0].title), playlist, entries, 'catalog' if catalog else 'direct', str(info.get('provider') or ''))
@@ -66,6 +70,11 @@ class QueueRecord:
     status: str = 'queued'
 
     def validate(self) -> None:
+        if self.source.kind == 'pending':
+            validate_url(self.source.url)
+            if self.selected or self.source.entries:
+                raise ValueError('Pending links cannot contain a selection.')
+            return
         allowed = {entry.index for entry in self.source.entries if entry.available}
         if not self.selected or any(type(i) is not int or i not in allowed for i in self.selected):
             raise ValueError('Select at least one available video.')
@@ -73,6 +82,8 @@ class QueueRecord:
 
     def options(self, defaults: Options) -> Options:
         self.validate()
+        if self.source.kind == 'pending':
+            raise ValueError('Fetch this link before downloading.')
         return replace(defaults, url=self.source.url, playlist=self.source.is_playlist,
                        playlist_items=tuple(self.selected) if self.source.is_playlist else ())
 
@@ -92,7 +103,12 @@ class QueueStore:
             for entry in source['entries']:
                 details[str(entry['index'])] = {key: entry.pop(key) for key in ('url', 'artist', 'album')}
             source['entry_details'] = details
-        data = json.dumps({'version': 1, 'items': items}, ensure_ascii=False, indent=2)
+        # Older builds can still read resolved selections after a rollback.
+        # Empty, unresolved sources live outside their legacy items array.
+        pending_items = [item for item in items if item['source']['kind']=='pending']
+        resolved_items = [item for item in items if item['source']['kind']!='pending']
+        data = json.dumps({'version': 1, 'items': resolved_items, 'pending_items': pending_items,
+                           'order': [item['id'] for item in items]}, ensure_ascii=False, indent=2)
         temporary = self.path.with_suffix('.tmp')
         temporary.write_text(data, encoding='utf-8')
         if self.path.exists():
@@ -112,7 +128,7 @@ class QueueStore:
                     continue
                 records = []
                 ids = set()
-                for raw in data['items']:
+                for raw in data['items'] + data.get('pending_items', []):
                     source = raw['source']
                     details = source.get('entry_details') or {}
                     entries = [MediaEntry(**(e | details.get(str(e['index']), {}))) for e in source['entries']]
@@ -122,13 +138,15 @@ class QueueStore:
                         provider = catalog_provider(source['url'])
                     entry = MediaSource(validate_url(source['url']), str(source['title']), bool(source['is_playlist']), entries, source.get('kind', 'catalog' if provider else 'direct'), provider)
                     status = raw.get('status', 'queued')
-                    status = status if status in ('queued', 'completed', 'error', 'cancelled') else 'queued'
+                    status = ('fetch_error' if status == 'fetch_error' else 'pending') if entry.kind == 'pending' else status if status in ('queued', 'completed', 'error', 'cancelled') else 'queued'
                     record = QueueRecord(entry, raw['selected'], str(raw['id']), status)
                     record.validate()
                     if record.id in ids:
                         raise ValueError('Duplicate queue ID')
                     ids.add(record.id)
                     records.append(record)
+                order={value:index for index,value in enumerate(data.get('order',[]))}
+                records.sort(key=lambda record:order.get(record.id,len(order)))
                 return records
             except (OSError, ValueError, TypeError, KeyError, AttributeError):
                 continue
@@ -174,7 +192,7 @@ class Batch:
                             self.active = self.download_factory(self.tools, receive)
                         self.active.run(options)
                 except Exception as exc:
-                    self.emit('log', str(exc))
+                    self.emit('log', redact(exc))
                     final = {'status': 'error', 'files': 0}
                 finally:
                     with self._lock:
@@ -202,7 +220,7 @@ class Batch:
                 with self._lock:
                     if self.cancelled.is_set():
                         return {'status': 'cancelled', 'files': files}
-                    self.active = Preview(self.tools, self.emit)
+                    self.active = Preview(self.tools, self.emit, defaults.cookies)
                 info = self.active.search(entry.artist or entry.channel, entry.title)
                 url, title = choose_match(entry, info)
                 self.emit('log', f'[Catalog] {record.source.provider}: {entry.title} -> YouTube audio: {title} ({url})')
@@ -230,3 +248,70 @@ class Batch:
                 errors += 1
                 self.emit('log', '[Catalog] ' + str(exc))
         return {'status': 'error' if errors else 'success', 'files': files}
+
+
+def link_key(url):
+    """Ignore tracking only; keep playlist and video identities distinct."""
+    parsed = urlsplit(validate_url(url))
+    host = parsed.hostname.lower()
+    query = parse_qs(parsed.query)
+    if host in ('youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be', 'www.youtu.be'):
+        if query.get('list'):
+            return 'youtube:playlist:' + query['list'][0]
+        video = query.get('v', [''])[0] or (parsed.path.strip('/') if host.endswith('youtu.be') else parsed.path.split('/')[-1] if parsed.path.startswith(('/shorts/', '/live/')) else '')
+        if video:
+            return 'youtube:video:' + video
+    return urlunsplit((parsed.scheme, parsed.netloc.lower(), parsed.path, urlencode([(k,v) for k,values in query.items() if k.lower() not in ('si','fbclid','gclid') and not k.lower().startswith('utm_') for v in values]), ''))
+
+
+def stage_links(text, existing=()):
+    links = text.split()
+    if not links:
+        raise ValueError('No links entered.')
+    # Validate the whole input before making any queue changes.
+    for link in links:
+        validate_url(link)
+    seen = {link_key(r.source.url) for r in existing if r.status != 'completed'}
+    result = []
+    for url in links:
+        identity = link_key(url)
+        if identity not in seen:
+            seen.add(identity)
+            result.append(QueueRecord(MediaSource(url, url, False, [], 'pending'), [], status='pending'))
+    return result
+
+
+class ResolveBatch(Batch):
+    def __init__(self, tools, emit, cookies=None, preview_factory=Preview):
+        super().__init__(tools, emit)
+        self.cookies = cookies
+        self.preview_factory = preview_factory
+
+    def run(self, records):
+        errors = resolved = 0
+        try:
+            for record in records:
+                if self.cancelled.is_set():
+                    break
+                self.emit('queue_status', {'id': record.id, 'status': 'fetching'})
+                try:
+                    with self._lock:
+                        if self.cancelled.is_set():
+                            break
+                        self.active = self.preview_factory(self.tools, self.emit, self.cookies)
+                    source = normalize_preview(record.source.url, self.active.fetch(record.source.url))
+                    if self.cancelled.is_set():
+                        break
+                    resolved += 1
+                    self.emit('resolved', {'id': record.id, 'source': source})
+                except Exception as exc:
+                    if self.cancelled.is_set():
+                        break
+                    errors += 1
+                    self.emit('log', redact(exc))
+                    self.emit('queue_status', {'id': record.id, 'status': 'fetch_error'})
+                finally:
+                    with self._lock:
+                        self.active = None
+        finally:
+            self.emit('resolve_done', {'resolved': resolved, 'errors': errors, 'cancelled': self.cancelled.is_set()})

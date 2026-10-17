@@ -2,19 +2,20 @@
 
 **Slulisee's Simple yt-dlp Downloader** · made by Slulisee
 
-A small, practical desktop GUI for **yt-dlp nightly**. Preview playlists, choose
-what you want, queue several links, and download when you're ready.
+A small, practical desktop GUI for **yt-dlp nightly**. Collect links first,
+fetch playlists together, choose what you want, and download when you're ready.
 
 [Download](https://github.com/Slulisee/SSYTDLP/releases/latest) ·
 [Install](docs/INSTALL.md) · [How to use](docs/USAGE.md) ·
-[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.1.0.md) · [Contribute](CONTRIBUTING.md)
+[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.2.0.md) · [Contribute](CONTRIBUTING.md)
 
-![SSYTDLP Ocean theme](docs/screenshots/thumbnails.png)
+![SSYTDLP expanded downloader queue](docs/screenshots/bulk-downloader.png)
 
 ## What it does
 
 - Video presets: 1080p MP4, 720p MP4 and best-quality MKV.
 - Audio presets: MP3, M4A, Opus and FLAC.
+- Quick Add and multiline bulk links; batch fetch without repeated preview dialogs.
 - Select individual playlist entries, then stage multiple videos or playlists.
 - Choose your download folder, embed metadata and covers, and sort Artist / Album folders.
 - Optional lyrics: timed LRC, plain text and supported embedded lyric tags.
@@ -24,6 +25,7 @@ what you want, queue several links, and download when you're ready.
 - Optional completed-download handoff to SSMP.
 - Saved queues, cancellation, resume and duplicate skipping.
 - Official nightly engine updates with SHA256 verification.
+- Optional browser cookies or session-only cookies.txt import, with a built-in guide.
 
 ## Install
 
@@ -39,15 +41,16 @@ still needs community testing even when the native build passes CI.
 
 ## Use it
 
-1. Paste a link and choose **Preview / Add**.
-2. Select entries in the preview, then **Add to queue**. Repeat for more links.
-3. Choose a preset, destination and optional metadata, lyrics or subtitles.
-4. Press **Download queue**.
+1. Paste a link and press **Quick add** (or Enter), or use **Add multiple links**.
+2. Open **Queue → Fetch queued links**. Review all playlist entries together and edit selections as needed.
+3. Choose a preset, destination and optional metadata, lyrics or subtitles under **Download options**.
+4. Press **Download queue**. Single-link **Preview / Add** remains optional.
 
 Open **Queue** to browse every video inside your playlists, search, and edit selections.
 Open **Settings → Appearance** for sixteen visual themes and your own colors.
 See the [appearance guide](APPEARANCE.md) and optional [SSMP handoff](SSMP-INTEGRATION.md).
 The [usage guide](docs/USAGE.md) explains selections, service imports and retries.
+See [cookie import and browser setup](docs/COOKIES.md) and [bulk queues, artist folders and lyric matching](docs/QUEUE-AND-METADATA.md).
 
 ## Music services
 
@@ -68,10 +71,12 @@ to save. Personal use does not itself grant copying rights.
 | --- | --- |
 | ![Carbon](docs/screenshots/carbon.png) | ![Themes](docs/screenshots/themes.png) |
 
-![Detailed playlist queue](docs/screenshots/queue-details.png)
+![Bulk playlist queue](docs/screenshots/bulk-queue.png)
+
+![Cookie settings](docs/screenshots/cookies-settings.png)
 
 Screenshots capture the real Windows UI. The queue preview combines a public
-YouTube metadata example with an explicitly labeled generated layout playlist.
+SoundCloud metadata example with explicitly labeled generated layout playlists.
 No media downloads or personal settings are included in this repository.
 Layout and window decoration vary by platform.
 

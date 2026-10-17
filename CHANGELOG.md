@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+## 1.2.0 — 2026-10-17
+
+- Add session-only Netscape cookie imports, remembered browser-cookie selection, hover help and an offline export/import guide.
+- Add immediate Quick Add and multiline bulk link staging, saved unresolved links, batch fetching, cancellation and retry in the detailed Queue page. Single-link preview remains optional.
+- Deduplicate artist credits before naming/tagging; keep collaborator tags and group organized downloads under the primary artist or album artist. Reuse matching existing artist folders.
+- Improve LRCLIB identity cleanup, primary-artist and combined-query fallbacks, short-song matching, timeouts and version/duration checks.
+- Let the downloader queue use extra window height; inset checkbox focus marks; wrap Settings tabs on compact windows in all four languages.
+
 User-visible changes are recorded here. Versions follow `MAJOR.MINOR.PATCH`.
 Unreleased entries move into a dated version before its GitHub release.
 
