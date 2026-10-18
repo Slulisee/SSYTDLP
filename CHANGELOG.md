@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0 — 2026-10-18
+
+- Add optional daily background checks and verified app downloads on Windows. Install the staged update silently after all app windows close.
+- Preserve manual update controls, settings, queue, engine files and downloaded media.
+
+
 ## Unreleased
 
 ## 1.4.0 — 2026-10-17

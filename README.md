@@ -3,7 +3,7 @@
 **Slulisee's simple media downloader** · made by Slulisee
 
 Formerly SSYTDLP. The repository URL stays the same so existing app updaters
-continue to work. Version 1.4.0 upgrades the existing app and imports its saved
+continue to work. Version 1.4.0 introduced the rename and upgrades the existing app and imports its saved
 settings, queue and wallpaper into SSMD without deleting the old data.
 
 A small, practical desktop GUI for **yt-dlp nightly**. Collect links first,
@@ -11,7 +11,7 @@ fetch playlists together, choose what you want, and download when you're ready.
 
 [Download](https://github.com/Slulisee/SSYTDLP/releases/latest) ·
 [Install](docs/INSTALL.md) · [How to use](docs/USAGE.md) ·
-[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.4.0.md) · [Contribute](CONTRIBUTING.md)
+[Changelog](CHANGELOG.md) · [Validation](docs/VERIFICATION-v1.5.0.md) · [Contribute](CONTRIBUTING.md)
 
 ![SSMD expanded downloader queue](docs/screenshots/bulk-downloader.png)
 
@@ -40,7 +40,9 @@ SSMD from the Start menu. No administrator account is needed. A portable ZIP is
 also available; extract the whole archive and keep `_internal` and `tools` beside `SSMD.exe`.
 Windows release builds include FFmpeg, ffprobe, Deno and yt-dlp nightly.
 
-For future updates, open **Settings → App updates → Check for app updates**.
+Version 1.5.0 enables daily background app-update checks on Windows. Verified updates install silently after all app windows close. Disable **Download updates and install after closing** in Settings → App updates to keep updates manual.
+
+For a manual check, open **Settings → App updates → Check for app updates**.
 Windows can download a smaller update and open setup in the existing app folder.
 Your settings, queue, downloads and existing nightly engine remain in place.
 See the [upgrade guide](docs/UPDATES.md), including older portable copies.

@@ -67,7 +67,9 @@ media stays in your chosen destination. Setup and uninstall never delete those
 folders. Files you placed in the program folder yourself are not recursively
 deleted by uninstall; it removes its explicit app-file list and empty folders.
 
-Checks are manual. They contact this project's public GitHub releases API; no
+Version 1.5.0 enables optional daily background checks on Windows. A verified update installs silently after all app windows close. Disable **Download updates and install after closing** in Settings → App updates to keep updates manual. Checks and downloads do not block media jobs.
+
+Manual controls remain available. They contact this project's public GitHub releases API; no
 cookies, account data, queue or media URLs are sent. Only stable, newer releases
 are offered. If assets are still uploading or a check fails, retry later.
 Downloads are stored under the settings folder's `updates/<version>` subfolder.

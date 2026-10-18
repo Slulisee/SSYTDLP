@@ -1,4 +1,4 @@
-"""A small, manual app updater inside Settings."""
+"""Stable app-update controls and background-update preferences."""
 from pathlib import Path
 import sys
 import threading
@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QGridLayout, QProgressBar
 
 import app_updates
 from platform_support import open_folder
-from ui_widgets import Card, text_label
+from ui_widgets import Card, Check, text_label
 from version import APP_VERSION
 
 
@@ -24,6 +24,12 @@ class UpdateCard(Card):
         self.status_values = {'version': APP_VERSION}
         app.heading(self.body, 'app_updates', 'refresh', 'app_update_hint')
         self.body.addWidget(text_label('SSMD ' + APP_VERSION, 'heading'))
+        self.automatic=Check(app.t('app_automatic'),app,bool(app.saved_settings.get('automatic_app_updates',True)))
+        self.automatic.setEnabled(self.installable())
+        self.automatic.toggled.connect(self.change_automatic)
+        self.body.addWidget(self.automatic)
+        self.automatic_hint=text_label(app.t('app_automatic_hint'),'muted',True)
+        self.body.addWidget(self.automatic_hint)
         self.status = text_label('', 'muted', True)
         self.body.addWidget(self.status)
         self.progress = QProgressBar()
@@ -41,6 +47,10 @@ class UpdateCard(Card):
         self.translate()
         self.sync_state()
 
+    def change_automatic(self,value):
+        self.app.saved_settings['automatic_app_updates']=bool(value);self.app.persist()
+        if not value and hasattr(self.app,'automatic_updater'):self.app.automatic_updater.cancelled.set()
+
     def installable(self):
         return app_updates.can_install(self.app.home, frozen=getattr(sys, 'frozen', False))
 
@@ -50,9 +60,11 @@ class UpdateCard(Card):
 
     def translate(self):
         self.status.setText(self.app.t(self.status_key, **self.status_values))
+        if hasattr(self,"automatic"):self.automatic.setText(self.app.t("app_automatic"))
+        if hasattr(self,"automatic_hint"):self.automatic_hint.setText(self.app.t("app_automatic_hint"))
 
     def sync_state(self):
-        idle = self.app.operation == 'idle'
+        idle = self.app.operation == 'idle' and not getattr(getattr(self.app,'automatic_updater',None),'running',False)
         self.check_button.setEnabled(idle)
         self.download_button.setVisible(bool(self.release and self.release.newer and self.release.asset and not self.downloaded))
         self.download_button.setEnabled(idle)
@@ -71,7 +83,7 @@ class UpdateCard(Card):
         for index,button in enumerate(visible):self.controls.addWidget(button,index//2,index%2)
 
     def check(self):
-        if self.app.operation != 'idle':
+        if self.app.operation != 'idle' or getattr(getattr(self.app,'automatic_updater',None),'running',False):
             return
         self.app.set_operation('app_check')
         self.set_status('app_checking')
@@ -84,7 +96,7 @@ class UpdateCard(Card):
         threading.Thread(target=worker, daemon=True).start()
 
     def download(self):
-        if self.app.operation != 'idle' or not self.release or not self.release.asset:
+        if self.app.operation != 'idle' or getattr(getattr(self.app,'automatic_updater',None),'running',False) or not self.release or not self.release.asset:
             return
         self.cancelled.clear()
         self.app.set_operation('app_download')

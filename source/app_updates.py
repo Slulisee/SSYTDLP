@@ -1,4 +1,4 @@
-"""Manual updates from this project's published, stable GitHub releases."""
+"""Verified updates from this project's published, stable GitHub releases."""
 from dataclasses import dataclass
 from pathlib import Path
 import hashlib
@@ -154,7 +154,7 @@ def download_release(asset, directory, progress=lambda *_: None, cancelled=None)
         temporary.unlink(missing_ok=True)
 
 
-def launch_installer(path, home, asset):
+def launch_installer(path, home, asset, *, silent=False):
     path, home = Path(path).resolve(), Path(home).resolve()
     if platform.system() != 'Windows' or path.name != asset.name or path.suffix != '.exe':
         raise ValueError('Not a Windows app installer')
@@ -164,7 +164,7 @@ def launch_installer(path, home, asset):
         raise ValueError('App installation folder is missing')
     # NSIS requires /D last and without quotes, even when its path has spaces.
     # This is a native CreateProcess command line; no shell interprets it.
-    command = subprocess.list2cmdline([str(path)]) + ' /D=' + str(home)
+    command = subprocess.list2cmdline([str(path)]) + (' /S /AUTO' if silent else '') + ' /D=' + str(home)
     return subprocess.Popen(command, executable=str(path), cwd=str(path.parent), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 

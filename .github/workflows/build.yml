@@ -4,6 +4,14 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Draft release tag to receive verified assets
+        required: false
+      publish:
+        description: Publish the draft after checks pass
+        type: boolean
+        default: false
   release:
     types: [published]
 permissions:
@@ -66,7 +74,7 @@ jobs:
           path: native-artifacts/
           if-no-files-found: error
   publish:
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish)
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -80,5 +88,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$RELEASE_TAG" release-assets/*
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
+        run: |
+          gh release upload "$RELEASE_TAG" release-assets/*
+          gh release edit "$RELEASE_TAG" --draft=false --latest

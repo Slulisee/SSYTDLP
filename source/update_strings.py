@@ -19,3 +19,9 @@ UPDATE_STRINGS = {
  'app_update_failed': ('App update failed: {error}', 'App-Update fehlgeschlagen: {error}', 'Error al actualizar: {error}', 'Échec de la mise à jour : {error}'),
  'app_update_cancelled': ('Update download cancelled. Your current app is unchanged.', 'Update-Download abgebrochen. Die bisherige App bleibt erhalten.', 'Descarga cancelada. Se conserva la app actual.', 'Téléchargement annulé. L’app actuelle est conservée.'),
 }
+
+UPDATE_STRINGS.update({
+ 'app_automatic': ('Download updates and install after closing','Updates herunterladen und nach dem Schließen installieren','Descargar actualizaciones e instalarlas al cerrar','Télécharger les mises à jour et les installer après fermeture'),
+ 'app_automatic_hint': ('Windows checks stable app releases once a day in the background. Close the app to apply a verified update. Your settings, queue, engines and media stay in place.','Windows prüft stabile App-Versionen einmal täglich im Hintergrund. Nach dem Schließen wird ein geprüftes Update installiert. Einstellungen, Warteschlange, Engines und Medien bleiben erhalten.','Windows busca versiones estables una vez al día en segundo plano. Al cerrar se instala la actualización verificada. Se conservan ajustes, cola, motores y archivos.','Windows recherche les versions stables une fois par jour en arrière-plan. Une mise à jour vérifiée est installée après fermeture. Réglages, file, moteurs et médias sont conservés.'),
+ 'app_automatic_ready': ('Update {version} is ready and will install after closing.','Update {version} ist bereit und wird nach dem Schließen installiert.','La actualización {version} se instalará al cerrar.','La mise à jour {version} sera installée après fermeture.'),
+})

@@ -55,7 +55,7 @@ Before a release, fill `CHANGELOG.md`, add a dated version section, and update
 screenshots when the UI changes. Create a GitHub release using a matching `vX.Y.Z`
 tag and that changelog section as its notes. The published-release event builds
 and attaches native archives and checksums. Release uploads require the workflow's
-`contents: write` permission. A manually dispatched run only produces CI artifacts.
+`contents: write` permission. A manually dispatched run produces CI artifacts by default. Supplying a draft release tag and enabling publish attaches verified assets and then publishes that draft.
 
 ## Source map
 
@@ -88,3 +88,5 @@ fixed matching assets; `update_page.py` handles the Settings controls. `installe
 owns per-user setup. The workflow runs installer verification before publication.
 
 Tests use `QT_QPA_PLATFORM=offscreen` in CI. macOS requires macOS 14+ for the pinned Qt wheel. Linux needs the system Qt/XCB/EGL dependencies listed in the workflow.
+
+`automatic_updates.py` stages verified Windows updates in the user cache without locking media jobs; the app hands them to the silent installer on normal close. The same update preference disables checks and handoff. Pending files and checksums are revalidated before execution.

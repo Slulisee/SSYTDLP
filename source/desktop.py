@@ -24,6 +24,7 @@ from cookie_support import BROWSERS, CookieSource, redact
 from cookie_page import CookieCard
 from link_dialog import BulkDialog
 from update_page import UpdateCard
+from automatic_updates import AutomaticUpdater
 from data_migration import user_data_directory
 from version import APP_VERSION
 from qt_dialogs import SelectionDialog
@@ -104,6 +105,7 @@ class App(QMainWindow):
         self.queue_page=QueuePage(self);self.pages.addWidget(self.queue_page)
         self.apply_appearance(persist=False)
         self.refresh_queue();self.preset_changed();self.set_status('ready');self.set_operation('idle')
+        self.automatic_updater=AutomaticUpdater(self,enabled=settings_path is None and getattr(sys,'frozen',False))
         self.poll_timer=QTimer(self);self.poll_timer.timeout.connect(self.poll);self.poll_timer.start(65)
         self.url_entry.returnPressed.connect(self.quick_add)
         QShortcut(QKeySequence('Ctrl+L'),self,activated=lambda:(self.navigate('downloader'),self.url_entry.setFocus(),self.url_entry.selectAll()))
@@ -538,7 +540,8 @@ class App(QMainWindow):
         try:
             for _ in range(150):
                 kind,value=self.events.get_nowait()
-                if kind in ('app_release','app_downloaded','app_update_progress','app_update_error','app_update_cancelled'):
+                if kind.startswith('automatic_app_'):self.automatic_updater.receive(kind,value)
+                elif kind in ('app_release','app_downloaded','app_update_progress','app_update_error','app_update_cancelled'):
                     self.settings_page.update_card.receive(kind,value)
                 elif kind=='log':
                     self.append_log(value)
@@ -621,7 +624,7 @@ class App(QMainWindow):
                 if self.operation=='app_download':self.settings_page.update_card.cancelled.set()
                 elif self.operation not in ('update','app_check'):self.cancel()
             event.ignore();return
-        self.persist();self.poll_timer.stop();self.thumbnails.close();event.accept()
+        self.persist();self.automatic_updater.close();self.poll_timer.stop();self.thumbnails.close();event.accept()
 
 
 class SettingsPage(QScrollArea):
@@ -768,8 +771,8 @@ def main():
     from app_updates import hold_application_mutex
     application_mutex=hold_application_mutex()
     qt=QApplication(sys.argv[:1]);qt.setStyle('Fusion');qt.setApplicationName(APP_NAME);qt.setOrganizationName('Slulisee')
-    smoke=len(sys.argv)>2 and sys.argv[1] in ('--smoke-test','--smoke-test-user-data')
-    app=App(Path(sys.argv[2]).with_suffix('.settings.json') if smoke and sys.argv[1]=='--smoke-test' else None)
+    smoke=len(sys.argv)>2 and sys.argv[1] in ('--smoke-test','--smoke-test-user-data','--smoke-updates')
+    app=App(Path(sys.argv[2]).with_suffix('.settings.json') if smoke and sys.argv[1]!='--smoke-test-user-data' else None)
     app.show()
     if smoke:
         def verify():
@@ -778,7 +781,9 @@ def main():
             from engine import bundled_plugins, process_kwargs
             from platform_support import tool_path
             import subprocess
-            app.navigate('queue');qt.processEvents()
+            if sys.argv[1]=='--smoke-updates':
+                app.navigate('settings');app.settings_page.select_section('updates');qt.processEvents();app.grab().save(str(Path(sys.argv[2]).with_suffix('.png')))
+            else:app.navigate('queue');qt.processEvents()
             fixture=Path(sys.argv[2]).with_suffix('.plugin.json')
             fixture.write_text(json.dumps(dict(id='smoke',title='Generated smoke fixture',artist='Example Artist, Friend, Example Artist',album='Example Album',url='https://example.com/generated.wav',ext='wav',extractor='generic')),encoding='utf-8')
             try:
@@ -787,7 +792,7 @@ def main():
             except Exception:metadata_plugin=False
             finally:fixture.unlink(missing_ok=True)
             values=dict(title=app.windowTitle(),presets=list(PRESETS),nightly=app.read_version().replace('\n',' '),mapped=app.isVisible(),
-                app_version=APP_VERSION,app_updates=app.settings_page.update_card.check_button.text(),
+                app_version=APP_VERSION,app_updates=app.settings_page.update_card.check_button.text(),automatic_updates_checked=app.settings_page.update_card.automatic.isChecked(),automatic_updates_enabled=app.settings_page.update_card.automatic.isEnabled(),
                 app_data_name=app.settings_path.parent.name,record_count=len(app.records),
                 buttons=[app.download_button.text(),app.add_button.text(),app.nav['settings'].text()],languages=LANGUAGES,
                 theme=app.theme,themes=list(THEMES),watermark='made by Slulisee',extras=[app.t(k) for k in ('metadata','cover','organize','skip','lyrics','subtitles')],

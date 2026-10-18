@@ -12,6 +12,7 @@ import subprocess
 import sys
 import time
 import zipfile
+from version import APP_VERSION
 
 
 def sha(path):
@@ -24,7 +25,7 @@ def main():
         raise SystemExit('Windows only')
     import winreg
     root = Path(__file__).resolve().parent.parent
-    work = root / 'build/installer-verification'
+    work = Path(os.environ.get('SSMD_INSTALLER_QA_ROOT',str(root / 'build/installer-verification'))).resolve()
     work.mkdir(parents=True, exist_ok=True)
     target = work / 'App with spaces'
     if target.exists():
@@ -111,7 +112,7 @@ def main():
         assert all(sha(target/'tools'/name)==value for name,value in engines.items() if name!='engines.json')
         result['engines_retained'] = True
         upgraded=smoke('upgrade-smoke')
-        assert upgraded['app_version']=='1.4.0' and upgraded['title']=="SSMD - Slulisee's simple media downloader"
+        assert upgraded['app_version']==APP_VERSION and upgraded['title']=="SSMD - Slulisee's simple media downloader"
         assert not (target/'SSYTDLP.exe').exists()
         if 'baseline_1_3_0_gui' in result:
             assert not old_shortcut.exists()

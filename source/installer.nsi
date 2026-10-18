@@ -37,6 +37,7 @@ VIAddVersionKey "LegalCopyright" "Slulisee - MIT License"
 !define MUI_LANGDLL_REGISTRY_KEY "Software\Slulisee\SSMD"
 !define MUI_LANGDLL_REGISTRY_VALUENAME "InstallerLanguage"
 
+Var AutomaticUpdate
 !macro WAIT_FOR_APP PREFIX
   StrCpy $0 0
   ${Do}
@@ -57,7 +58,8 @@ VIAddVersionKey "LegalCopyright" "Slulisee - MIT License"
       System::Call 'kernel32::CloseHandle(p r2)'
     ${EndIf}
     IntOp $0 $0 + 1
-    ${If} $0 >= 40
+    ${If} $AutomaticUpdate != "1"
+    ${AndIf} $0 >= 40
       IfSilent ${PREFIX}busy
       MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Close all SSMD / SSYTDLP windows before continuing. Your queue is saved when the app closes." IDRETRY ${PREFIX}retry
       ${PREFIX}busy:
@@ -72,6 +74,18 @@ VIAddVersionKey "LegalCopyright" "Slulisee - MIT License"
 
 Function .onInit
   SetShellVarContext current
+  System::Call 'kernel32::CreateMutexW(p 0, i 0, w "Local\Slulisee.SSMD.Installer") p.r5 ?e'
+  Pop $6
+  ${If} $6 = 183
+    SetErrorLevel 0
+    Quit
+  ${EndIf}
+  ${GetParameters} $0
+  ClearErrors
+  ${GetOptions} $0 "/AUTO" $1
+  ${IfNot} ${Errors}
+    StrCpy $AutomaticUpdate "1"
+  ${EndIf}
   !insertmacro MUI_LANGDLL_DISPLAY
   !insertmacro WAIT_FOR_APP init
 FunctionEnd

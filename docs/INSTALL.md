@@ -67,6 +67,9 @@ together, and run `./SSMD`. Install FFmpeg separately. Builds made on Ubuntu
 
 ## Updates and saved data
 
+Since 1.5.0, Windows optionally checks in the background once a day, downloads a verified stable update and installs it silently after all app windows close. The option is enabled initially and can be disabled in Settings → App updates. Manual update controls remain available.
+
+
 Open **Settings → App updates** to check the latest stable SSMD version and
 download a package with SHA256 verification. On Windows, **Install update…** saves
 your queue, closes the app, and opens setup at the existing app folder. Finish
